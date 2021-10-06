@@ -1,0 +1,1848 @@
+ca65 V2.18 - Git 7b2e4d0
+Main file   : mindfield_ml.asm
+Current file: mindfield_ml.asm
+
+000000r 1                     .import         initlib, donelib, callmain
+000000r 1                     .import         zerobss, pushax
+000000r 1                     .import         copysegs
+000000r 1                     .import         _main, __filetab, getfd
+000000r 1               
+000000r 1               _PMBANK                                 =$1800
+000000r 1               _VARBANK                                =$0600
+000000r 1               _SCREEN_ADDR                            =$0800
+000000r 1               _GAME_SCREEN_ADDR                       =$0840
+000000r 1               
+000000r 1               _RTCLOCK                                =$12
+000000r 1               _PMBANK_HI                              = >_PMBANK
+000000r 1               
+000000r 1               
+000000r 1               
+000000r 1               _M0		        	          	            =$C0
+000000r 1               _M1		        	          	            =$C1
+000000r 1               _M2		        	          	            =$C2
+000000r 1               _M3		        	          	            =$C3
+000000r 1               _M4		        	          	            =$C4
+000000r 1               _M5		        	          	            =$C5
+000000r 1               _M6		        	          	            =$C6
+000000r 1               _M7		        	          	            =$C7
+000000r 1               _M8		        	          	            =$C8
+000000r 1               _M9		        	          	            =$C9
+000000r 1               _NDX0									                  =$CA
+000000r 1               _NDX1									                  =$CB
+000000r 1               _NDX2									                  =$CC
+000000r 1               _NDX3									                  =$CD
+000000r 1               _HOLDX									                =$CE
+000000r 1               _HOLDY									                =$CF
+000000r 1               
+000000r 1                             ;PLAY_SOUNDS                                      =SOUND_COMMANDER + $0000
+000000r 1                             ;START_SOUND                                      =SOUND_COMMANDER + $009F
+000000r 1                             ;GET_NEXT_MUSIC_NOTE                              =SOUND_COMMANDER + $00F6
+000000r 1                             ;STOP_SOUND                                       =SOUND_COMMANDER + $0189
+000000r 1                             ;SILENCE                                          =SOUND_COMMANDER + $019E
+000000r 1               
+000000r 1               _SPRITENUM	                                     =_PMBANK+$0180
+000000r 1               _SETSP0COLOR                                     =_PMBANK+$0190
+000000r 1               _SETSP1COLOR                                     =_PMBANK+$01A0
+000000r 1               _SETSPWIDTH                                      =_PMBANK+$01B0
+000000r 1               _SPRITENHOZ                                      =_PMBANK+$01C0
+000000r 1               _SPRITENVRT                                      =_PMBANK+$01E0
+000000r 1               _SPHOZNEXT                                       =_PMBANK+$01F0
+000000r 1               
+000000r 1               _SPRHZ0	                            	           =_PMBANK+$0200
+000000r 1               _SPRHZ1	                            	           =_PMBANK+$0210
+000000r 1               _SPRHZ2	                            	           =_PMBANK+$0220
+000000r 1               _SPRHZ3	                            	           =_PMBANK+$0230
+000000r 1               _SPZONT                                          =_PMBANK+$0240
+000000r 1               _SPZONB                                          =_PMBANK+$0250
+000000r 1               _SPSRC0                                          =_PMBANK+$0260
+000000r 1               _SPSRC1                                          =_PMBANK+$0278
+000000r 1               _SPSRC2                                          =_PMBANK+$0290
+000000r 1               _SPSRC3                                          =_PMBANK+$02A8
+000000r 1               _SPSRC4                                          =_PMBANK+$02C0
+000000r 1               _SPRITEUSE                                       =_PMBANK+$02D8
+000000r 1               
+000000r 1               _MIBANK                                          =_PMBANK+$0300
+000000r 1               _PMBNK0                                          =_PMBANK+$0400
+000000r 1               _PMBNK1                             	           =_PMBANK+$0500
+000000r 1               _PMBNK2                                          =_PMBANK+$0600
+000000r 1               _PMBNK3                             	           =_PMBANK+$0700
+000000r 1               
+000000r 1               _character_px                                    =_VARBANK + $020
+000000r 1               _character_py                                    =_VARBANK + $021
+000000r 1               _character_status                                =_VARBANK + $022
+000000r 1               _prior_py                                        =_VARBANK + $024
+000000r 1               _stick_read                                      =_VARBANK + $026
+000000r 1               _character_frame                                 =_VARBANK + $027
+000000r 1               _prior_rt_clock                                  =_VARBANK + $02C
+000000r 1               _menu_selection                                  =_VARBANK + $02D
+000000r 1               _find_option                                     =_VARBANK + $02E
+000000r 1               _bombs_on_option                                 =_VARBANK + $02F
+000000r 1               _walls_on_option                                 =_VARBANK + $030
+000000r 1               _shooters_option                                 =_VARBANK + $032
+000000r 1               _mind_color                                      =_VARBANK + $034
+000000r 1               _show_countdown                                  =_VARBANK + $036
+000000r 1               _minds_found                                     =_VARBANK + $038
+000000r 1               _minds_under                                     =_VARBANK + $03A
+000000r 1               _titlephase                                      =_VARBANK + $03C
+000000r 1               _score                                           =_VARBANK + $03E
+000000r 1               _lives                                           =_VARBANK + $040
+000000r 1               _level                                           =_VARBANK + $041
+000000r 1               _topMem                                          =_VARBANK + $042;
+000000r 1               _chbase1                                         =_VARBANK + $044;
+000000r 1               _row_addr                                        =_VARBANK + $046;
+000000r 1               _exit_cx  	                                	   =_VARBANK + $048;
+000000r 1               _exit_cy  	                                		 =_VARBANK + $049;
+000000r 1               _exit_p0  	                                		 =_VARBANK + $04A;
+000000r 1               _exit_p1  	                                		 =_VARBANK + $04B;
+000000r 1               _SOUND_COMMANDER_VARIABLE_AREA                   =_VARBANK + $060;
+000000r 1               
+000000r 1               
+000000r 1               
+000000r 1                     .export _PMBANK
+000000r 1                     .export _VARBANK
+000000r 1                     .export _SCREEN_ADDR
+000000r 1                     .export _GAME_SCREEN_ADDR
+000000r 1                     .export _PMBANK_HI
+000000r 1               
+000000r 1                     .export _M0
+000000r 1                     .export _M1
+000000r 1                     .export _M2
+000000r 1                     .export _M3
+000000r 1                     .export _M4
+000000r 1                     .export _M5
+000000r 1                     .export _M6
+000000r 1                     .export _M7
+000000r 1                     .export _M8
+000000r 1                     .export _M9
+000000r 1               
+000000r 1                     .export _NDX0
+000000r 1                     .export _NDX1
+000000r 1                     .export _NDX2
+000000r 1                     .export _NDX3
+000000r 1                     .export _HOLDX
+000000r 1                     .export _HOLDY
+000000r 1                     ;.export _PLAY_SOUNDS
+000000r 1                     ;.export _START_SOUND
+000000r 1                     ;.export _GET_NEXT_MUSIC_NOTE
+000000r 1                     ;.export _STOP_SOUND
+000000r 1                     ;.export _SILENCE
+000000r 1                     .export _SPRITENUM
+000000r 1                     .export _SETSP0COLOR
+000000r 1                     .export _SETSP1COLOR
+000000r 1                     .export _SETSPWIDTH
+000000r 1                     .export _SPRITENHOZ
+000000r 1                     .export _SPRITENVRT
+000000r 1                     .export _SPHOZNEXT
+000000r 1                     .export _SPRHZ0
+000000r 1                     .export _SPRHZ1
+000000r 1                     .export _SPRHZ2
+000000r 1                     .export _SPRHZ3
+000000r 1                     .export _SPZONT
+000000r 1                     .export _SPZONB
+000000r 1                     .export _SPSRC0
+000000r 1                     .export _SPSRC1
+000000r 1                     .export _SPSRC2
+000000r 1                     .export _SPSRC3
+000000r 1                     .export _SPSRC4
+000000r 1                     .export _SPRITEUSE
+000000r 1                     .export _MIBANK
+000000r 1                     .export _PMBNK0
+000000r 1                     .export _PMBNK1
+000000r 1                     .export _PMBNK2
+000000r 1                     .export _PMBNK3
+000000r 1               
+000000r 1                     .export _character_px
+000000r 1                     .export _character_py
+000000r 1                     .export _character_status
+000000r 1                     .export _prior_py
+000000r 1                     .export _stick_read
+000000r 1                     .export _character_frame
+000000r 1                     .export _prior_rt_clock
+000000r 1                     .export _menu_selection
+000000r 1                     .export _find_option
+000000r 1                     .export _bombs_on_option
+000000r 1                     .export _walls_on_option
+000000r 1                     .export _shooters_option
+000000r 1                     .export _mind_color
+000000r 1                     .export _show_countdown
+000000r 1                     .export _minds_found
+000000r 1                     .export _minds_under
+000000r 1                     .export _titlephase
+000000r 1                     .export _score
+000000r 1                     .export _lives
+000000r 1                     .export _level
+000000r 1                     .export _topMem
+000000r 1                     .export _chbase1
+000000r 1                     .export _row_addr
+000000r 1                     .export _exit_cx
+000000r 1                     .export _exit_cy
+000000r 1                     .export _exit_p0
+000000r 1                     .export _exit_p1
+000000r 1               
+000000r 1               
+000000r 1                     .segment "DATA0"
+000000r 1               
+000000r 1                     .include "Atari 8-bit Equates.asm"
+000000r 2               ;Atari Hardware Registers
+000000r 2               ;File version 1.03
+000000r 2               ;2005-01-02 17:47:15
+000000r 2               ;Register names based on PDF specifications
+000000r 2               ;---------------------------------------
+000000r 2               ;HARDWARE
+000000r 2               ;CPU vectors
+000000r 2               NMIV	= $FFFA 	;NMI vector
+000000r 2               RESETV	= $FFFC 	;RESET vector
+000000r 2               IRQV	= $FFFE 	;IRQ vector
+000000r 2               
+000000r 2               ;GTIA Write
+000000r 2               GTIA	= $D000
+000000r 2               HPOSP0	= $D000
+000000r 2               HPOSP1	= $D001
+000000r 2               HPOSP2	= $D002
+000000r 2               HPOSP3	= $D003
+000000r 2               HPOSM0	= $D004
+000000r 2               HPOSM1	= $D005
+000000r 2               HPOSM2	= $D006
+000000r 2               HPOSM3	= $D007
+000000r 2               SIZEP0	= $D008
+000000r 2               SIZEP1	= $D009
+000000r 2               SIZEP2	= $D00A
+000000r 2               SIZEP3	= $D00B
+000000r 2               SIZEM	= $D00C
+000000r 2               GRAFP0	= $D00D
+000000r 2               GRAFP1	= $D00E
+000000r 2               GRAFP2	= $D00F
+000000r 2               GRAFP3	= $D010
+000000r 2               GRAFM	= $D011
+000000r 2               COLPM0	= $D012
+000000r 2               COLPM1	= $D013
+000000r 2               COLPM2	= $D014
+000000r 2               COLPM3	= $D015
+000000r 2               COLPF0	= $D016
+000000r 2               COLPF1	= $D017
+000000r 2               COLPF2	= $D018
+000000r 2               COLPF3	= $D019
+000000r 2               COLBAK	= $D01A
+000000r 2               COLBK	= $D01A 	;alias of COLBAK
+000000r 2               PRIOR	= $D01B
+000000r 2               VDELAY	= $D01C
+000000r 2               GRACTL	= $D01D
+000000r 2               HITCLR	= $D01E
+000000r 2               CONSOL	= $D01F
+000000r 2               
+000000r 2               ;GTIA Read
+000000r 2               M0PF	= $D000
+000000r 2               M1PF	= $D001
+000000r 2               M2PF	= $D002
+000000r 2               M3PF	= $D003
+000000r 2               P0PF	= $D004
+000000r 2               P1PF	= $D005
+000000r 2               P2PF	= $D006
+000000r 2               P3PF	= $D007
+000000r 2               M0PL	= $D008
+000000r 2               M1PL	= $D009
+000000r 2               M2PL	= $D00A
+000000r 2               M3PL	= $D00B
+000000r 2               P0PL	= $D00C
+000000r 2               P1PL	= $D00D
+000000r 2               P2PL	= $D00E
+000000r 2               P3PL	= $D00F
+000000r 2               TRIG0	= $D010
+000000r 2               TRIG1	= $D011
+000000r 2               TRIG2	= $D012
+000000r 2               TRIG3	= $D013
+000000r 2               PAL	= $D014
+000000r 2               
+000000r 2               ;Pokey Write
+000000r 2               POKEY	= $D200
+000000r 2               AUDF1	= $D200
+000000r 2               AUDF2	= $D202
+000000r 2               AUDF3	= $D204
+000000r 2               AUDF4	= $D206
+000000r 2               AUDC1	= $D201
+000000r 2               AUDC2	= $D203
+000000r 2               AUDC3	= $D205
+000000r 2               AUDC4	= $D207
+000000r 2               AUDCTL	= $D208
+000000r 2               STIMER	= $D209
+000000r 2               SKRES	= $D20A
+000000r 2               POTGO	= $D20B
+000000r 2               SEROUT	= $D20D
+000000r 2               IRQEN	= $D20E
+000000r 2               SKCTL	= $D20F
+000000r 2               
+000000r 2               ;Pokey Read
+000000r 2               POT0	= $D200
+000000r 2               POT1	= $D201
+000000r 2               POT2	= $D202
+000000r 2               POT3	= $D203
+000000r 2               POT4	= $D204
+000000r 2               POT5	= $D205
+000000r 2               POT6	= $D206
+000000r 2               POT7	= $D207
+000000r 2               ALLPOT	= $D208
+000000r 2               POTST	= $D208
+000000r 2               KBCODE	= $D209
+000000r 2               RANDOM	= $D20A
+000000r 2               SERIN	= $D20D
+000000r 2               IRQST	= $D20E
+000000r 2               SKSTAT	= $D20F
+000000r 2               
+000000r 2               ;PIA
+000000r 2               PIA	    = $D300
+000000r 2               PORTA	  = $D300
+000000r 2               PORTB	  = $D301
+000000r 2               PACTL	  = $D302
+000000r 2               PBCTL	  = $D303
+000000r 2               
+000000r 2               ;ANTIC
+000000r 2               ANTIC	  = $D400
+000000r 2               DMACTL	= $D400
+000000r 2               CHACTL	= $D401
+000000r 2               DLISTL	= $D402
+000000r 2               DLISTH	= $D403
+000000r 2               HSCROL	= $D404
+000000r 2               VSCROL	= $D405
+000000r 2               PMBASE	= $D407
+000000r 2               CHBASE	= $D409
+000000r 2               WSYNC	  = $D40A
+000000r 2               VCOUNT	= $D40B
+000000r 2               PENH	  = $D40C
+000000r 2               PENV	  = $D40D
+000000r 2               NMIEN	  = $D40E
+000000r 2               NMIRES	= $D40F
+000000r 2               NMIST	  = $D40F
+000000r 2               
+000000r 2               ;ANTIC dlisplay list commands
+000000r 2               DL_E1	= $00
+000000r 2               DL_E2	= $10
+000000r 2               DL_E3	= $20
+000000r 2               DL_E4	= $30
+000000r 2               DL_E5	= $40
+000000r 2               DL_E6	= $50
+000000r 2               DL_E7	= $60
+000000r 2               DL_E8	= $70
+000000r 2               DL_JUMP	= $01 	;jump to adress and create one empty line
+000000r 2               DL_LOOP	= $41 	;jump to adress and wait for vsync
+000000r 2               DL_ADRES	= $40 	;load memory counter
+000000r 2               DL_DLI	= $80 	;dli interrupt
+000000r 2               DL_HS	= $10 	;horizontal scroll
+000000r 2               DL_VS	= $20 	;vertical scroll
+000000r 2               ;BASIC GR-codes:
+000000r 2               DL_GR0	= $02 	;text hi-res mode 40 bytes/line
+000000r 2               DL_GR1	= $06 	;4 color text mode 20 bytes/line, 1 line V
+000000r 2               DL_GR2	= $07 	;4 color text mode 20 bytes/line, 2 line V
+000000r 2               DL_GR3	= $08 	;4 color graphics mode 10 bytes/line, 8 line V
+000000r 2               DL_GR4	= $09 	;1 color graphics mode 10 bytes/line, 4 line V
+000000r 2               DL_GR5	= $0A 	;4 color graphics mode, 20 bytes/line, 4 line V
+000000r 2               DL_GR6	= $0B 	;1 color graphics mode, 20 bytes/line, 2 line V
+000000r 2               DL_GR7	= $0D 	;4 color graphics mode, 40 bytes/line, 2 line V
+000000r 2               DL_GR8	= $0F 	;graphics hi-res mode 40 bytes/line
+000000r 2               DL_GR12	= $04 	;text - 4+1 color, 1 line V
+000000r 2               DL_GR15	= $0E 	;4 color graphics mode, 40 bytes/line, 1 line V
+000000r 2               ;modes not supported by BASIC
+000000r 2               DL_A3	= $03 	;hi-res text mode 8x10 pixel char, 40 bytes/line
+000000r 2               DL_A5	= $05 	;text - 4+1 color, 2 line V
+000000r 2               DL_AC	= $0C 	;1 color graphics mode, 20 bytes/line, 1 line V
+000000r 2               ;------------------------------------------
+000000r 2               ;OS Vectors
+000000r 2               VDSLST = $0200 ;512,513
+000000r 2               VPRCED = $0202 ;514,515
+000000r 2               VINTER = $0204 ;516,517
+000000r 2               VBREAK = $0206 ;518,519
+000000r 2               VKEYBD = $0208 ;520,521
+000000r 2               VSERIN = $020A ;522,523
+000000r 2               VSEROR = $020C ;524,525
+000000r 2               VSEROC = $020E ;526,527
+000000r 2               VTIMR1 = $0210 ;528,529
+000000r 2               VTIMR2 = $0212 ;530,531
+000000r 2               VTIMR3 = $0214 ;532,533
+000000r 2               VIMIRQ = $0216 ;534,535
+000000r 2               CDTMV1 = $0218 ;536,537
+000000r 2               CDTMV2 = $021A ;538,539
+000000r 2               CDTMV3 = $021C ;540,541
+000000r 2               CDTMV4 = $022E ;542,543
+000000r 2               CDTMV5 = $0220 ;544,545
+000000r 2               VVBLKI = $0222 ;546,547
+000000r 2               VVBLKD = $0224 ;548,549
+000000r 2               CDTMA1 = $0226 ;550,551
+000000r 2               CDTMA2 = $0228 ;552,553
+000000r 2               SDMCTL = $022F ;559
+000000r 2               SDLSTL = $0230 ;560
+000000r 2               SDLSTH = $0231 ;561
+000000r 2               GPRIOR = $026F ;623
+000000r 2               ;Some Shadow Registers
+000000r 2               
+000000r 2               PCOLR0 = $02C0 ;704
+000000r 2               PCOLR1 = $02C1 ;705
+000000r 2               PCOLR2 = $02C2 ;706
+000000r 2               PCOLR3 = $02C3 ;707
+000000r 2               COLOR0 = $02C4 ;708
+000000r 2               COLOR1 = $02C5 ;709
+000000r 2               COLOR2 = $02C6 ;710
+000000r 2               COLOR3 = $02C7 ;711
+000000r 2               COLOR4 = $02C8 ;712
+000000r 2               CRSINH = $02F0 ;752
+000000r 2               CHACT  = $02F3 ;755
+000000r 2               CHBAS  = $02F4 ;756
+000000r 2               
+000000r 2               ;Shadow Joystick Read
+000000r 2               STICK0  = $278 ; 632
+000000r 2               STICK1  = $279 ; 633
+000000r 2               STICK2  = $27A ; 634
+000000r 2               STICK3  = $27B ; 635
+000000r 2               STRIG0  = $284 ; 644
+000000r 2               STRIG1  = $285 ; 645
+000000r 2               STRIG2  = $286 ; 646
+000000r 2               STRIG3  = $287 ; 647
+000000r 2               
+000000r 2               ;OS CALLS
+000000r 2               SETVBV	= $E45C
+000000r 2               SYSVBV	= $E45F
+000000r 2               XITVBV	= $E462
+000000r 2               ;------------------------------------------
+000000r 2               ;USEFUL
+000000r 2               ;bit mask
+000000r 2               OR0	= 1
+000000r 2               OR1	= 2
+000000r 2               OR2	= 4
+000000r 2               OR3	= 8
+000000r 2               OR4	= 16
+000000r 2               OR5	= 32
+000000r 2               OR6	= 64
+000000r 2               OR7	= 128
+000000r 2               AND0	= $FE
+000000r 2               AND1	= $FD
+000000r 2               AND2	= $FB
+000000r 2               AND3	= $F7
+000000r 2               AND4	= $EF
+000000r 2               AND5	= $DF
+000000r 2               AND6	= $BF
+000000r 2               AND7	= $7F
+000000r 2               ;-----------------------------------------------
+000000r 2               ;hw bits
+000000r 2               SKSTAT_KEYPRESS	= OR2 	;key pressed
+000000r 2               SKSTAT_SHIFT	= OR3 	;shift key pressed
+000000r 2               SKSTAT_SR_BUSY	= OR1 	;serial input register busy
+000000r 2               SKSTAT_FERR	= OR7 	;framing error
+000000r 2               SKSTAT_KB_OVR	= OR6 	;keyboard overrun
+000000r 2               SKSTAT_SR_OVR	= OR5 	;serial overrun
+000000r 2               SKSTAT_IN_PAD	= OR4 	;serial input pin
+000000r 2               
+000000r 2               ;Atari OS Routines
+000000r 2               ;File version 1.01
+000000r 2               ;2005-03-13 10:35:00
+000000r 2               ;-----------------------------
+000000r 2               RAMLO	= $04
+000000r 2               IRQENS	= $10
+000000r 2               RTCLOK1	= $14
+000000r 2               TIMER	= $14
+000000r 2               RTCLOK2	= $13
+000000r 2               RTCLOK3	= $12
+000000r 2               RAMTOP	= $6A
+000000r 2               ATRACT	= $4D
+000000r 2               KEYDEF	= $79
+000000r 2               ;----------------------------
+000000r 2               WARMST	= $08
+000000r 2               DOSVEC	= $0A
+000000r 2               DOSINI	= $0C
+000000r 2               COLDST	= $0244
+000000r 2               PUPBT1	= $033D
+000000r 2               PUPBT2	= $033E
+000000r 2               PUPBT3	= $033F
+000000r 2               ZIOCB	= $20
+000000r 2               RUNAD	= $02E0
+000000r 2               INITAD	= $02E2
+000000r 2               KBCODES	= $02FC
+000000r 2               HATABS	= $031A
+000000r 2               ;bloki IOCB
+000000r 2               IOCB	= $0340
+000000r 2               ICHID	= $0340
+000000r 2               ICDNO	= $0341
+000000r 2               ICCOM	= $0342
+000000r 2               ICSTA	= $0343
+000000r 2               ICBAL	= $0344
+000000r 2               ICBAH	= $0345
+000000r 2               ICPTL	= $0346
+000000r 2               ICPTH	= $0347
+000000r 2               ICBLL	= $0348
+000000r 2               ICBLH	= $0349
+000000r 2               ICAX1	= $034A
+000000r 2               ICAX2	= $034B
+000000r 2               ICAX3	= $034C
+000000r 2               ICAX4	= $034D
+000000r 2               ICAX5	= $034E
+000000r 2               ICAX6	= $034F
+000000r 2               CIO_OPEN	= 3
+000000r 2               CIO_GETTEXT	= 5
+000000r 2               CIO_GETDATA	= 7
+000000r 2               CIO_PUTTEXT	= 9
+000000r 2               CIO_PUTDATA	= 11
+000000r 2               CIO_CLOSE	= 12
+000000r 2               CIO_GETSTATUS	= 13
+000000r 2               CIO_READ	= 4
+000000r 2               CIO_WRITE	= 8
+000000r 2               CIO_DIR	= 6
+000000r 2               ;------------------------------
+000000r 2               ;Procedury, tablice OS
+000000r 2               PUTLINE	= $C642
+000000r 2               DSKINT	= $E453
+000000r 2               CIOMAIN	= $E456
+000000r 2               CIOVXLE = $E4DF
+000000r 2               CIOV800 = $E4C4
+000000r 2               CIOVANY	= $E456
+000000r 2               CIOV    = CIOVXLE
+000000r 2               
+000000r 2               SIOINT	= $E459
+000000r 2               SIOV	= $E459
+000000r 2               SELFTST	= $E471
+000000r 2               COLDV	= $E477
+000000r 2               COLD	= $E477
+000000r 2               NEWDEV	= $EEBC
+000000r 2               ;Graphic Direct Calls
+000000r 2               FILFLG = $02B7
+000000r 2               DRAWXLE = $F9C2
+000000r 2               
+000000r 2               
+000000r 2               KEY_A  = 63
+000000r 2               KEY_S  = 62
+000000r 2               KEY_G  = 61
+000000r 2               KEY_Cap  = 60
+000000r 2               KEY_D  = 58
+000000r 2               KEY_H  = 57
+000000r 2               KEY_F  = 56
+000000r 2               KEY_Great = 55
+000000r 2               KEY_Less = 54
+000000r 2               KEY_8  = 53
+000000r 2               KEY_BSp  = 52
+000000r 2               KEY_7  = 51
+000000r 2               KEY_0  = 50
+000000r 2               KEY_9  = 48
+000000r 2               KEY_Q  = 47
+000000r 2               KEY_W  = 46
+000000r 2               KEY_T  = 45
+000000r 2               KEY_Tab  = 44
+000000r 2               KEY_Y  = 43
+000000r 2               KEY_E  = 42
+000000r 2               KEY_R  = 40
+000000r 2               KEY_Inv  = 39
+000000r 2               KEY_Slash = 38
+000000r 2               KEY_M  = 37
+000000r 2               KEY_N  = 35
+000000r 2               KEY_Dot  = 34
+000000r 2               KEY_Spa  = 33
+000000r 2               KEY_Comma = 32
+000000r 2               KEY_1  = 31
+000000r 2               KEY_2  = 30
+000000r 2               KEY_5  = 29
+000000r 2               KEY_Esc  = 28
+000000r 2               KEY_6  = 27
+000000r 2               KEY_3  = 26
+000000r 2               KEY_4  = 24
+000000r 2               KEY_Z  = 23
+000000r 2               KEY_X  = 22
+000000r 2               KEY_B  = 21
+000000r 2               KEY_F4  = 20
+000000r 2               KEY_F3  = 19
+000000r 2               KEY_C  = 18
+000000r 2               KEY_Hlp  = 17
+000000r 2               KEY_V  = 16
+000000r 2               KEY_Equal = 15
+000000r 2               KEY_Minus = 14
+000000r 2               KEY_I  = 13
+000000r 2               KEY_Ret  = 12
+000000r 2               KEY_U  = 11
+000000r 2               KEY_P  = 10
+000000r 2               KEY_O  = 8
+000000r 2               KEY_Aster = 7
+000000r 2               KEY_plus = 6
+000000r 2               KEY_K  = 5
+000000r 2               KEY_F2  = 4
+000000r 2               KEY_F1  = 3
+000000r 2               KEY_Semi = 2
+000000r 2               KEY_J  = 1
+000000r 2               KEY_L  = 0
+000000r 2               
+000000r 1                     .include "zeropage.inc"
+000000r 2               ;
+000000r 2               ; zeropage.inc
+000000r 2               ;
+000000r 2               ; (C) Copyright 2002-2012, Ullrich von Bassewitz (uz@cc65.org)
+000000r 2               ;
+000000r 2               
+000000r 2               ; Assembler include file that imports the runtime zero page locations used
+000000r 2               ; by the compiler, ready for usage in asm code.
+000000r 2               
+000000r 2               
+000000r 2                       .globalzp       sp, sreg, regsave
+000000r 2                       .globalzp       ptr1, ptr2, ptr3, ptr4
+000000r 2                       .globalzp       tmp1, tmp2, tmp3, tmp4
+000000r 2                       .globalzp       regbank
+000000r 2               
+000000r 2               ; The size of the register bank
+000000r 2               regbanksize     = 6
+000000r 2               
+000000r 2               ; The total amount of zero page space used
+000000r 2               zpspace         = 26
+000000r 2               
+000000r 2               ; The amount of space that needs to be saved by an interrupt handler that
+000000r 2               ; calls C code (does not include the register bank, which is saved by the
+000000r 2               ; generated C code if required).
+000000r 2               zpsavespace     = zpspace - regbanksize
+000000r 2               
+000000r 2               
+000000r 1                     .include "mindfield_data.asm"
+000000r 2               
+000000r 2               
+000000r 2               
+000000r 2               _CHARSET_GAME:
+000000r 2  00 00 00 00    .incbin         "MINDFIELD.FNT"
+000004r 2  00 00 00 00  
+000008r 2  00 30 30 30  
+000400r 2               _CHARSET_TITLE:
+000400r 2  00 00 00 00    .incbin         "MIND FIELD TITLE.FNT"
+000404r 2  00 00 00 00  
+000408r 2  00 00 00 00  
+000800r 2               _TITLE_DATA:
+000800r 2  00 00 00 00    .incbin         "Mind Field Title Screen.txt"
+000804r 2  00 00 00 00  
+000808r 2  00 00 00 00  
+000940r 2               
+000940r 2                     _CHARSET_GAME_HI = > _CHARSET_GAME
+000940r 2                     _CHARSET_TITLE_HI = > _CHARSET_TITLE
+000940r 2               
+000940r 2               
+000940r 2                     .export _CHARSET_GAME
+000940r 2                     .export _CHARSET_TITLE
+000940r 2                     .export _CHARSET_GAME_HI
+000940r 2                     .export _CHARSET_TITLE_HI
+000940r 2                     .export _TITLE_DATA
+000940r 2               
+000940r 2               ;     _CHARSET_TITLE_HI         = .hibyte(_CHARSET_TITLE)
+000940r 2               ;     _CHARSET_GAME_HI          = .hibyte(_CHARSET_GAME)
+000940r 2               ;     .export _CHARSET_TITLE_HI
+000940r 2               ;     .export _CHARSET_GAME_HI
+000940r 2               
+000940r 2               _display_list_title:
+000940r 2  70 C0 44          .byte $70,$C0,$44
+000943r 2  rr                .byte <_TITLE_DATA
+000944r 2  rr                .byte >_TITLE_DATA
+000945r 2  04 04 04 04       .byte $04,$04,$04,$04,$04,$04,$84,$00,$44
+000949r 2  04 04 84 00  
+00094Dr 2  44           
+00094Er 2  40                .byte <_GAME_SCREEN_ADDR
+00094Fr 2  08                .byte >_GAME_SCREEN_ADDR
+000950r 2  00 04 00 04       .byte $00,$04,$00,$04,$00,$04,$00,$04,$00,$04,$00,$04,$00,$04,$00,$04,$00,$04,$00,$04,$00,$04,$00,$04,$00,$04,$00,$04,$00,$04,$00,$04,$00,$04,$41
+000954r 2  00 04 00 04  
+000958r 2  00 04 00 04  
+000973r 2  rr                .byte <_display_list_title
+000974r 2  rr                .byte >_display_list_title
+000975r 2               
+000975r 2               _display_list_game:
+000975r 2  70 70 44          .byte $70,$70,$44
+000978r 2  00                .byte <_SCREEN_ADDR
+000979r 2  08                .byte >_SCREEN_ADDR
+00097Ar 2  10 44             .byte $10,$44
+00097Cr 2  40                .byte <_GAME_SCREEN_ADDR
+00097Dr 2  08                .byte >_GAME_SCREEN_ADDR
+00097Er 2  04 04 04 04       .byte $04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$41
+000982r 2  04 04 04 04  
+000986r 2  04 04 04 04  
+000998r 2  rr                .byte <_display_list_game
+000999r 2  rr                .byte >_display_list_game
+00099Ar 2               
+00099Ar 2                     .export _display_list_title
+00099Ar 2                     .export _display_list_game
+00099Ar 2               
+00099Ar 2               
+00099Ar 2               _SCRREN_ROW_LOW:
+00099Ar 2  40 68 90 B8      .byte <(_GAME_SCREEN_ADDR +   0),<(_GAME_SCREEN_ADDR +   40), <(_GAME_SCREEN_ADDR +  80), <(_GAME_SCREEN_ADDR + 120), <(_GAME_SCREEN_ADDR + 160)
+00099Er 2  E0           
+00099Fr 2  08 30 58 80      .byte <(_GAME_SCREEN_ADDR + 200), <(_GAME_SCREEN_ADDR + 240), <(_GAME_SCREEN_ADDR + 280), <(_GAME_SCREEN_ADDR + 320), <(_GAME_SCREEN_ADDR + 360)
+0009A3r 2  A8           
+0009A4r 2  D0 F8 20 48    	.byte <(_GAME_SCREEN_ADDR + 400), <(_GAME_SCREEN_ADDR + 440), <(_GAME_SCREEN_ADDR + 480), <(_GAME_SCREEN_ADDR + 520), <(_GAME_SCREEN_ADDR + 560)
+0009A8r 2  70           
+0009A9r 2  98 C0 E8 10    	.byte <(_GAME_SCREEN_ADDR + 600), <(_GAME_SCREEN_ADDR + 640), <(_GAME_SCREEN_ADDR + 680), <(_GAME_SCREEN_ADDR + 720), <(_GAME_SCREEN_ADDR + 760)
+0009ADr 2  38           
+0009AEr 2  60 88 B0 D8      .byte <(_GAME_SCREEN_ADDR + 800), <(_GAME_SCREEN_ADDR + 840), <(_GAME_SCREEN_ADDR + 880), <(_GAME_SCREEN_ADDR + 920), <(_GAME_SCREEN_ADDR + 960)
+0009B2r 2  00           
+0009B3r 2  28               .byte <(_GAME_SCREEN_ADDR + 1000)
+0009B4r 2               
+0009B4r 2               _SCRREN_ROW_HIGH:
+0009B4r 2  08 08 08 08  	  .byte >(_GAME_SCREEN_ADDR +   0), >(_GAME_SCREEN_ADDR +  40), >(_GAME_SCREEN_ADDR +  80), >(_GAME_SCREEN_ADDR + 120), >(_GAME_SCREEN_ADDR + 160)
+0009B8r 2  08           
+0009B9r 2  09 09 09 09    	.byte >(_GAME_SCREEN_ADDR + 200), >(_GAME_SCREEN_ADDR + 240), >(_GAME_SCREEN_ADDR + 280), >(_GAME_SCREEN_ADDR + 320), >(_GAME_SCREEN_ADDR + 360)
+0009BDr 2  09           
+0009BEr 2  09 09 0A 0A    	.byte >(_GAME_SCREEN_ADDR + 400), >(_GAME_SCREEN_ADDR + 440), >(_GAME_SCREEN_ADDR + 480), >(_GAME_SCREEN_ADDR + 520), >(_GAME_SCREEN_ADDR + 560)
+0009C2r 2  0A           
+0009C3r 2  0A 0A 0A 0B    	.byte >(_GAME_SCREEN_ADDR + 600), >(_GAME_SCREEN_ADDR + 640), >(_GAME_SCREEN_ADDR + 680), >(_GAME_SCREEN_ADDR + 720), >(_GAME_SCREEN_ADDR + 760)
+0009C7r 2  0B           
+0009C8r 2  0B 0B 0B 0B    	.byte >(_GAME_SCREEN_ADDR + 800), >(_GAME_SCREEN_ADDR + 840), >(_GAME_SCREEN_ADDR + 880), >(_GAME_SCREEN_ADDR + 920), >(_GAME_SCREEN_ADDR + 960)
+0009CCr 2  0C           
+0009CDr 2  0C             	.byte >(_GAME_SCREEN_ADDR + 1000)
+0009CEr 2               
+0009CEr 2                     .export _SCRREN_ROW_LOW
+0009CEr 2                     .export _SCRREN_ROW_HIGH
+0009CEr 2               
+0009CEr 2               
+0009CEr 2               
+0009CEr 2               
+0009CEr 2               P000:
+0009CEr 2  10                .byte %00010000; $10  16
+0009CFr 2  38                .byte %00111000; $38  56
+0009D0r 2  38                .byte %00111000; $38  56
+0009D1r 2  7C                .byte %01111100; $7C  124
+0009D2r 2  7C                .byte %01111100; $7C  124
+0009D3r 2  7C                .byte %01111100; $7C  124
+0009D4r 2  7C                .byte %01111100; $7C  124
+0009D5r 2  38                .byte %00111000; $38  56
+0009D6r 2  38                .byte %00111000; $38  56
+0009D7r 2  38                .byte %00111000; $38  56
+0009D8r 2  28                .byte %00101000; $28  40
+0009D9r 2  28                .byte %00101000; $28  40
+0009DAr 2  28                .byte %00101000; $28  40
+0009DBr 2  28                .byte %00101000; $28  40
+0009DCr 2               
+0009DCr 2               P001:
+0009DCr 2  10                .byte %00010000; $10  16
+0009DDr 2  38                .byte %00111000; $38  56
+0009DEr 2  38                .byte %00111000; $38  56
+0009DFr 2  78                .byte %01111000; $78  120
+0009E0r 2  78                .byte %01111000; $78  120
+0009E1r 2  7C                .byte %01111100; $7C  124
+0009E2r 2  7E                .byte %01111110; $7E  126
+0009E3r 2  3A                .byte %00111010; $3A  58
+0009E4r 2  3A                .byte %00111010; $3A  58
+0009E5r 2  38                .byte %00111000; $38  56
+0009E6r 2  28                .byte %00101000; $28  40
+0009E7r 2  2C                .byte %00101100; $2C  44
+0009E8r 2  24                .byte %00100100; $24  36
+0009E9r 2  20                .byte %00100000; $20  32
+0009EAr 2               
+0009EAr 2               P002:
+0009EAr 2  1C                .byte %00011100; $1C  28
+0009EBr 2  1C                .byte %00011100; $1C  28
+0009ECr 2  0C                .byte %00001100; $0C  12
+0009EDr 2  1E                .byte %00011110; $1E  30
+0009EEr 2  3E                .byte %00111110; $3E  62
+0009EFr 2  3E                .byte %00111110; $3E  62
+0009F0r 2  1E                .byte %00011110; $1E  30
+0009F1r 2  1C                .byte %00011100; $1C  28
+0009F2r 2  18                .byte %00011000; $18  24
+0009F3r 2  18                .byte %00011000; $18  24
+0009F4r 2  18                .byte %00011000; $18  24
+0009F5r 2  1C                .byte %00011100; $1C  28
+0009F6r 2  1C                .byte %00011100; $1C  28
+0009F7r 2  14                .byte %00010100; $14  20
+0009F8r 2               
+0009F8r 2               P003:
+0009F8r 2  10                .byte %00010000; $10  16
+0009F9r 2  38                .byte %00111000; $38  56
+0009FAr 2  38                .byte %00111000; $38  56
+0009FBr 2  3C                .byte %00111100; $3C  60
+0009FCr 2  3C                .byte %00111100; $3C  60
+0009FDr 2  7C                .byte %01111100; $7C  124
+0009FEr 2  FC                .byte %11111100; $FC  252
+0009FFr 2  B8                .byte %10111000; $B8  184
+000A00r 2  B8                .byte %10111000; $B8  184
+000A01r 2  38                .byte %00111000; $38  56
+000A02r 2  28                .byte %00101000; $28  40
+000A03r 2  2C                .byte %00101100; $2C  44
+000A04r 2  24                .byte %00100100; $24  36
+000A05r 2  20                .byte %00100000; $20  32
+000A06r 2               
+000A06r 2               P004:
+000A06r 2  1C                .byte %00011100; $1C  28
+000A07r 2  1C                .byte %00011100; $1C  28
+000A08r 2  18                .byte %00011000; $18  24
+000A09r 2  3C                .byte %00111100; $3C  60
+000A0Ar 2  3E                .byte %00111110; $3E  62
+000A0Br 2  3E                .byte %00111110; $3E  62
+000A0Cr 2  3C                .byte %00111100; $3C  60
+000A0Dr 2  1C                .byte %00011100; $1C  28
+000A0Er 2  0C                .byte %00001100; $0C  12
+000A0Fr 2  0C                .byte %00001100; $0C  12
+000A10r 2  0C                .byte %00001100; $0C  12
+000A11r 2  1C                .byte %00011100; $1C  28
+000A12r 2  1C                .byte %00011100; $1C  28
+000A13r 2  14                .byte %00010100; $14  20
+000A14r 2               
+000A14r 2               P005:
+000A14r 2  10                .byte %00010000; $10  16
+000A15r 2  38                .byte %00111000; $38  56
+000A16r 2  38                .byte %00111000; $38  56
+000A17r 2  3C                .byte %00111100; $3C  60
+000A18r 2  3C                .byte %00111100; $3C  60
+000A19r 2  7C                .byte %01111100; $7C  124
+000A1Ar 2  FC                .byte %11111100; $FC  252
+000A1Br 2  B8                .byte %10111000; $B8  184
+000A1Cr 2  B8                .byte %10111000; $B8  184
+000A1Dr 2  38                .byte %00111000; $38  56
+000A1Er 2  28                .byte %00101000; $28  40
+000A1Fr 2  68                .byte %01101000; $68  104
+000A20r 2  48                .byte %01001000; $48  72
+000A21r 2  48                .byte %01001000; $48  72
+000A22r 2               
+000A22r 2               P006:
+000A22r 2  1C                .byte %00011100; $1C  28
+000A23r 2  1C                .byte %00011100; $1C  28
+000A24r 2  0C                .byte %00001100; $0C  12
+000A25r 2  1C                .byte %00011100; $1C  28
+000A26r 2  1E                .byte %00011110; $1E  30
+000A27r 2  1D                .byte %00011101; $1D  29
+000A28r 2  3E                .byte %00111110; $3E  62
+000A29r 2  3C                .byte %00111100; $3C  60
+000A2Ar 2  18                .byte %00011000; $18  24
+000A2Br 2  18                .byte %00011000; $18  24
+000A2Cr 2  24                .byte %00100100; $24  36
+000A2Dr 2  22                .byte %00100010; $22  34
+000A2Er 2  41                .byte %01000001; $41  65
+000A2Fr 2  41                .byte %01000001; $41  65
+000A30r 2               
+000A30r 2               P007:
+000A30r 2  10                .byte %00010000; $10  16
+000A31r 2  38                .byte %00111000; $38  56
+000A32r 2  38                .byte %00111000; $38  56
+000A33r 2  78                .byte %01111000; $78  120
+000A34r 2  78                .byte %01111000; $78  120
+000A35r 2  7C                .byte %01111100; $7C  124
+000A36r 2  7E                .byte %01111110; $7E  126
+000A37r 2  3A                .byte %00111010; $3A  58
+000A38r 2  3A                .byte %00111010; $3A  58
+000A39r 2  38                .byte %00111000; $38  56
+000A3Ar 2  28                .byte %00101000; $28  40
+000A3Br 2  68                .byte %01101000; $68  104
+000A3Cr 2  48                .byte %01001000; $48  72
+000A3Dr 2  48                .byte %01001000; $48  72
+000A3Er 2               
+000A3Er 2               P008:
+000A3Er 2  1C                .byte %00011100; $1C  28
+000A3Fr 2  1C                .byte %00011100; $1C  28
+000A40r 2  18                .byte %00011000; $18  24
+000A41r 2  1C                .byte %00011100; $1C  28
+000A42r 2  3C                .byte %00111100; $3C  60
+000A43r 2  5C                .byte %01011100; $5C  92
+000A44r 2  3E                .byte %00111110; $3E  62
+000A45r 2  1E                .byte %00011110; $1E  30
+000A46r 2  0C                .byte %00001100; $0C  12
+000A47r 2  0C                .byte %00001100; $0C  12
+000A48r 2  12                .byte %00010010; $12  18
+000A49r 2  22                .byte %00100010; $22  34
+000A4Ar 2  41                .byte %01000001; $41  65
+000A4Br 2  41                .byte %01000001; $41  65
+000A4Cr 2               
+000A4Cr 2               P009:
+000A4Cr 2  C3                .byte %11000011; $C3  195
+000A4Dr 2  C3                .byte %11000011; $C3  195
+000A4Er 2  66                .byte %01100110; $66  102
+000A4Fr 2  3C                .byte %00111100; $3C  60
+000A50r 2  18                .byte %00011000; $18  24
+000A51r 2  3C                .byte %00111100; $3C  60
+000A52r 2  7E                .byte %01111110; $7E  126
+000A53r 2  7E                .byte %01111110; $7E  126
+000A54r 2  7E                .byte %01111110; $7E  126
+000A55r 2  7E                .byte %01111110; $7E  126
+000A56r 2  7E                .byte %01111110; $7E  126
+000A57r 2  7E                .byte %01111110; $7E  126
+000A58r 2  3C                .byte %00111100; $3C  60
+000A59r 2  18                .byte %00011000; $18  24
+000A5Ar 2               
+000A5Ar 2               P010:
+000A5Ar 2  00                .byte %00000000; $00  0
+000A5Br 2  C6                .byte %11000110; $C6  198
+000A5Cr 2  C6                .byte %11000110; $C6  198
+000A5Dr 2  6C                .byte %01101100; $6C  108
+000A5Er 2  38                .byte %00111000; $38  56
+000A5Fr 2  38                .byte %00111000; $38  56
+000A60r 2  7C                .byte %01111100; $7C  124
+000A61r 2  7C                .byte %01111100; $7C  124
+000A62r 2  7C                .byte %01111100; $7C  124
+000A63r 2  7C                .byte %01111100; $7C  124
+000A64r 2  7C                .byte %01111100; $7C  124
+000A65r 2  7C                .byte %01111100; $7C  124
+000A66r 2  38                .byte %00111000; $38  56
+000A67r 2  10                .byte %00010000; $10  16
+000A68r 2               
+000A68r 2               P011:
+000A68r 2  00                .byte %00000000; $00  0
+000A69r 2  66                .byte %01100110; $66  102
+000A6Ar 2  66                .byte %01100110; $66  102
+000A6Br 2  3C                .byte %00111100; $3C  60
+000A6Cr 2  18                .byte %00011000; $18  24
+000A6Dr 2  18                .byte %00011000; $18  24
+000A6Er 2  3C                .byte %00111100; $3C  60
+000A6Fr 2  3C                .byte %00111100; $3C  60
+000A70r 2  3C                .byte %00111100; $3C  60
+000A71r 2  3C                .byte %00111100; $3C  60
+000A72r 2  3C                .byte %00111100; $3C  60
+000A73r 2  3C                .byte %00111100; $3C  60
+000A74r 2  18                .byte %00011000; $18  24
+000A75r 2  00                .byte %00000000; $00  0
+000A76r 2               
+000A76r 2               P012:
+000A76r 2  00                .byte %00000000; $00  0
+000A77r 2  00                .byte %00000000; $00  0
+000A78r 2  C3                .byte %11000011; $C3  195
+000A79r 2  66                .byte %01100110; $66  102
+000A7Ar 2  3C                .byte %00111100; $3C  60
+000A7Br 2  18                .byte %00011000; $18  24
+000A7Cr 2  3C                .byte %00111100; $3C  60
+000A7Dr 2  7E                .byte %01111110; $7E  126
+000A7Er 2  7E                .byte %01111110; $7E  126
+000A7Fr 2  7E                .byte %01111110; $7E  126
+000A80r 2  7E                .byte %01111110; $7E  126
+000A81r 2  18                .byte %00011000; $18  24
+000A82r 2  00                .byte %00000000; $00  0
+000A83r 2  00                .byte %00000000; $00  0
+000A84r 2               
+000A84r 2               P013:
+000A84r 2  00                .byte %00000000; $00  0
+000A85r 2  00                .byte %00000000; $00  0
+000A86r 2  C6                .byte %11000110; $C6  198
+000A87r 2  6C                .byte %01101100; $6C  108
+000A88r 2  38                .byte %00111000; $38  56
+000A89r 2  10                .byte %00010000; $10  16
+000A8Ar 2  38                .byte %00111000; $38  56
+000A8Br 2  7C                .byte %01111100; $7C  124
+000A8Cr 2  7C                .byte %01111100; $7C  124
+000A8Dr 2  7C                .byte %01111100; $7C  124
+000A8Er 2  7C                .byte %01111100; $7C  124
+000A8Fr 2  38                .byte %00111000; $38  56
+000A90r 2  00                .byte %00000000; $00  0
+000A91r 2  00                .byte %00000000; $00  0
+000A92r 2               
+000A92r 2               P014:
+000A92r 2  00                .byte %00000000; $00  0
+000A93r 2  00                .byte %00000000; $00  0
+000A94r 2  00                .byte %00000000; $00  0
+000A95r 2  66                .byte %01100110; $66  102
+000A96r 2  3C                .byte %00111100; $3C  60
+000A97r 2  18                .byte %00011000; $18  24
+000A98r 2  18                .byte %00011000; $18  24
+000A99r 2  3C                .byte %00111100; $3C  60
+000A9Ar 2  3C                .byte %00111100; $3C  60
+000A9Br 2  3C                .byte %00111100; $3C  60
+000A9Cr 2  18                .byte %00011000; $18  24
+000A9Dr 2  00                .byte %00000000; $00  0
+000A9Er 2  00                .byte %00000000; $00  0
+000A9Fr 2  00                .byte %00000000; $00  0
+000AA0r 2               
+000AA0r 2               P015:
+000AA0r 2  00                .byte %00000000; $00  0
+000AA1r 2  00                .byte %00000000; $00  0
+000AA2r 2  00                .byte %00000000; $00  0
+000AA3r 2  00                .byte %00000000; $00  0
+000AA4r 2  6C                .byte %01101100; $6C  108
+000AA5r 2  38                .byte %00111000; $38  56
+000AA6r 2  10                .byte %00010000; $10  16
+000AA7r 2  38                .byte %00111000; $38  56
+000AA8r 2  38                .byte %00111000; $38  56
+000AA9r 2  38                .byte %00111000; $38  56
+000AAAr 2  10                .byte %00010000; $10  16
+000AABr 2  00                .byte %00000000; $00  0
+000AACr 2  00                .byte %00000000; $00  0
+000AADr 2  00                .byte %00000000; $00  0
+000AAEr 2               
+000AAEr 2               P016:
+000AAEr 2  00                .byte %00000000; $00  0
+000AAFr 2  00                .byte %00000000; $00  0
+000AB0r 2  00                .byte %00000000; $00  0
+000AB1r 2  00                .byte %00000000; $00  0
+000AB2r 2  18                .byte %00011000; $18  24
+000AB3r 2  24                .byte %00100100; $24  36
+000AB4r 2  24                .byte %00100100; $24  36
+000AB5r 2  24                .byte %00100100; $24  36
+000AB6r 2  24                .byte %00100100; $24  36
+000AB7r 2  18                .byte %00011000; $18  24
+000AB8r 2  00                .byte %00000000; $00  0
+000AB9r 2  00                .byte %00000000; $00  0
+000ABAr 2  00                .byte %00000000; $00  0
+000ABBr 2  00                .byte %00000000; $00  0
+000ABCr 2               
+000ABCr 2               P017:
+000ABCr 2  00                .byte %00000000; $00  0
+000ABDr 2  00                .byte %00000000; $00  0
+000ABEr 2  18                .byte %00011000; $18  24
+000ABFr 2  24                .byte %00100100; $24  36
+000AC0r 2  42                .byte %01000010; $42  66
+000AC1r 2  42                .byte %01000010; $42  66
+000AC2r 2  42                .byte %01000010; $42  66
+000AC3r 2  42                .byte %01000010; $42  66
+000AC4r 2  42                .byte %01000010; $42  66
+000AC5r 2  42                .byte %01000010; $42  66
+000AC6r 2  24                .byte %00100100; $24  36
+000AC7r 2  18                .byte %00011000; $18  24
+000AC8r 2  00                .byte %00000000; $00  0
+000AC9r 2  00                .byte %00000000; $00  0
+000ACAr 2               
+000ACAr 2               P018:
+000ACAr 2  00                .byte %00000000; $00  0
+000ACBr 2  18                .byte %00011000; $18  24
+000ACCr 2  24                .byte %00100100; $24  36
+000ACDr 2  42                .byte %01000010; $42  66
+000ACEr 2  81                .byte %10000001; $81  129
+000ACFr 2  81                .byte %10000001; $81  129
+000AD0r 2  81                .byte %10000001; $81  129
+000AD1r 2  81                .byte %10000001; $81  129
+000AD2r 2  81                .byte %10000001; $81  129
+000AD3r 2  81                .byte %10000001; $81  129
+000AD4r 2  42                .byte %01000010; $42  66
+000AD5r 2  24                .byte %00100100; $24  36
+000AD6r 2  18                .byte %00011000; $18  24
+000AD7r 2  00                .byte %00000000; $00  0
+000AD8r 2               
+000AD8r 2               P019:
+000AD8r 2  3C                .byte %00111100; $3C  60
+000AD9r 2  42                .byte %01000010; $42  66
+000ADAr 2  42                .byte %01000010; $42  66
+000ADBr 2  81                .byte %10000001; $81  129
+000ADCr 2  81                .byte %10000001; $81  129
+000ADDr 2  81                .byte %10000001; $81  129
+000ADEr 2  81                .byte %10000001; $81  129
+000ADFr 2  81                .byte %10000001; $81  129
+000AE0r 2  81                .byte %10000001; $81  129
+000AE1r 2  81                .byte %10000001; $81  129
+000AE2r 2  81                .byte %10000001; $81  129
+000AE3r 2  42                .byte %01000010; $42  66
+000AE4r 2  42                .byte %01000010; $42  66
+000AE5r 2  3C                .byte %00111100; $3C  60
+000AE6r 2               
+000AE6r 2               
+000AE6r 2               _SPRITEADDR_PLY0LO:
+000AE6r 2  rr rr rr rr        .byte <P000,<P001,<P002,<P003,<P004,<P005,<P006,<P007,<P008,<P009,<P010,<P011,<P012,<P013,<P014,<P015
+000AEAr 2  rr rr rr rr  
+000AEEr 2  rr rr rr rr  
+000AF6r 2  rr rr rr rr        .byte <P016,<P017,<P018,<P019
+000AFAr 2               _SPRITEADDR_PLY0HI:
+000AFAr 2  rr rr rr rr        .byte >P000,>P001,>P002,>P003,>P004,>P005,>P006,>P007,>P008,>P009,>P010,>P011,>P012,>P013,>P014,>P015
+000AFEr 2  rr rr rr rr  
+000B02r 2  rr rr rr rr  
+000B0Ar 2  rr rr rr rr        .byte >P016,>P017,>P018,>P019
+000B0Er 2               
+000B0Er 2               _SPRITEADDR_PLY0W:
+000B0Er 2  rr rr rr rr        .word P000,P001,P002,P003,P004,P005,P006,P007,P008,P009,P010,P011,P012,P013,P014,P015
+000B12r 2  rr rr rr rr  
+000B16r 2  rr rr rr rr  
+000B2Er 2  rr rr rr rr        .word P016,P017,P018,P019
+000B32r 2  rr rr rr rr  
+000B36r 2               
+000B36r 2               
+000B36r 2                     .export _SPRITEADDR_PLY0LO      ; Makes Sprite Address Table available to C compiled program
+000B36r 2                     .export _SPRITEADDR_PLY0HI      ; Makes Sprite Address Table available to C compiled program
+000B36r 2                     .export _SPRITEADDR_PLY0W       ; Makes Sprite Address Table available to C compiled program
+000B36r 2               
+000B36r 2               
+000B36r 1                     .include "Mind_Field_Interupts.asm"
+000B36r 2               
+000B36r 2               _GAME_VBI:
+000B36r 2                     .export _GAME_VBI
+000B36r 2  A9 rr        		lda #<_GAME00_DLI
+000B38r 2  8D 00 02     		sta VDSLST+0
+000B3Br 2  A9 rr        		lda #>_GAME00_DLI
+000B3Dr 2  8D 01 02     		sta VDSLST+1
+000B40r 2  A9 22        		lda #$22
+000B42r 2  8D 1A D0     		sta COLBAK
+000B45r 2  AD 34 06     		lda _mind_color
+000B48r 2  8D 19 D0     		sta COLPF3
+000B4Br 2                 ;//  inc_RTCLOCK
+000B4Br 2                 ;//bne no_inc_other_clock
+000B4Br 2                 ;//inc RTCLOCK+1
+000B4Br 2                 ;//no_inc_other_clock:
+000B4Br 2               
+000B4Br 2  AD 24 06     	  	LDA _prior_py
+000B4Er 2  85 CC        	  	STA _NDX2
+000B50r 2  A9 1C        	  	LDA #>_PMBNK0
+000B52r 2  85 CD        	  	STA _NDX3
+000B54r 2               
+000B54r 2  A9 00        	  	LDA #0
+000B56r 2  A0 0D        	  	LDY #13
+000B58r 2               Clear_Character_Prior_Loop:
+000B58r 2  91 CC              STA (_NDX2),Y
+000B5Ar 2  88                 DEY
+000B5Br 2  10 FB              BPL Clear_Character_Prior_Loop
+000B5Dr 2               
+000B5Dr 2  AD 21 06           LDA _character_py
+000B60r 2  85 CC              STA _NDX2
+000B62r 2  A9 1C              LDA #>_PMBNK0
+000B64r 2  85 CD              STA _NDX3
+000B66r 2               
+000B66r 2  AC 27 06           LDY _character_frame
+000B69r 2               
+000B69r 2               
+000B69r 2  B9 rr rr           LDA _SPRITEADDR_PLY0LO,Y
+000B6Cr 2  85 CA              STA _NDX0
+000B6Er 2               
+000B6Er 2  B9 rr rr           LDA _SPRITEADDR_PLY0HI,Y
+000B71r 2  85 CB              STA _NDX1
+000B73r 2               
+000B73r 2  A0 0D              LDY #13
+000B75r 2               Copy_Character_Image_Loop:
+000B75r 2  B1 CA        		LDA (_NDX0),Y
+000B77r 2  91 CC        		STA (_NDX2),Y
+000B79r 2  88           		DEY
+000B7Ar 2  10 F9        		BPL Copy_Character_Image_Loop
+000B7Cr 2               
+000B7Cr 2  AD 20 06     		LDA _character_px
+000B7Fr 2  8D 00 D0     		STA HPOSP0
+000B82r 2               
+000B82r 2  AD 21 06         LDA _character_py
+000B85r 2  8D 24 06     		STA _prior_py
+000B88r 2               
+000B88r 2               
+000B88r 2               
+000B88r 2  20 rr rr     		JSR _PROCESS_SOUNDS
+000B8Br 2               
+000B8Br 2               
+000B8Br 2               
+000B8Br 2  4C 62 E4     		jmp XITVBV
+000B8Er 2               
+000B8Er 2               
+000B8Er 2               _TITLE_VBI:
+000B8Er 2                     .export _TITLE_VBI
+000B8Er 2  A9 rr        		lda #<_TITLE00_DLI
+000B90r 2  8D 00 02     		sta VDSLST+0
+000B93r 2  A9 rr        		lda #>_TITLE00_DLI
+000B95r 2  8D 01 02     		sta VDSLST+1
+000B98r 2  A9 22        		lda #$22
+000B9Ar 2  8D 1A D0     		sta COLBAK
+000B9Dr 2  A9 36        		lda #$36
+000B9Fr 2  8D 19 D0     		sta COLPF3
+000BA2r 2  E6 14        		inc _RTCLOCK+2
+000BA4r 2  4C 62 E4     		jmp XITVBV
+000BA7r 2               
+000BA7r 2               
+000BA7r 2               _PAUSE_VBI:
+000BA7r 2                     .export _PAUSE_VBI
+000BA7r 2               
+000BA7r 2  4C 62 E4     		jmp XITVBV
+000BAAr 2               
+000BAAr 2               _TITLE00_DLI:
+000BAAr 2                     .export _TITLE00_DLI
+000BAAr 2  48           	pha
+000BABr 2  A9 D8        	lda #$D8
+000BADr 2  8D 0A D4     	sta WSYNC
+000BB0r 2  8D 16 D0     	sta COLPF0
+000BB3r 2  A9 06        	lda #$06
+000BB5r 2  8D 17 D0     	sta COLPF1
+000BB8r 2  A9 AA        	lda #$AA
+000BBAr 2  8D 17 D0     	sta COLPF1
+000BBDr 2  A9 rr        	lda #>_CHARSET_TITLE
+000BBFr 2  8D 09 D4     	sta CHBASE
+000BC2r 2  A9 rr        	lda #<_TITLE01_DLI
+000BC4r 2  8D 00 02     	sta VDSLST+0
+000BC7r 2  A9 rr        	lda #>_TITLE01_DLI
+000BC9r 2  8D 01 02     	sta VDSLST+1
+000BCCr 2  68           	pla
+000BCDr 2  40           	rti
+000BCEr 2               
+000BCEr 2               _TITLE01_DLI:
+000BCEr 2                     .export _TITLE01_DLI
+000BCEr 2  48           	pha
+000BCFr 2  A9 8E        	lda #142
+000BD1r 2  8D 0A D4     	sta WSYNC
+000BD4r 2  8D 16 D0     	sta COLPF0
+000BD7r 2  A9 D8        	lda #216
+000BD9r 2  8D 17 D0     	sta COLPF1
+000BDCr 2  A9 38        	lda #56
+000BDEr 2  8D 18 D0     	sta COLPF2
+000BE1r 2  A9 rr        	lda #>_CHARSET_GAME
+000BE3r 2  8D 09 D4      	sta CHBASE
+000BE6r 2  A9 rr        	lda #<_TITLE00_DLI
+000BE8r 2  8D 00 02     	sta VDSLST+0
+000BEBr 2  A9 rr        	lda #>_TITLE00_DLI
+000BEDr 2  8D 01 02     	sta VDSLST+1
+000BF0r 2  68           	pla
+000BF1r 2  40           	rti
+000BF2r 2               
+000BF2r 2               _TITLE02_DLI:
+000BF2r 2                     .export _TITLE02_DLI
+000BF2r 2  48           	PHA
+000BF3r 2  68             PLA
+000BF4r 2  40             RTI
+000BF5r 2               
+000BF5r 2               
+000BF5r 2               _TITLE03_DLI:
+000BF5r 2                     .export _TITLE03_DLI
+000BF5r 2  48           	PHA
+000BF6r 2  68             PLA
+000BF7r 2  40             RTI
+000BF8r 2               
+000BF8r 2               
+000BF8r 2               _GAME00_DLI:
+000BF8r 2                     .export _GAME00_DLI
+000BF8r 2  48           	PHA
+000BF9r 2  68             PLA
+000BFAr 2  40             RTI
+000BFBr 2               
+000BFBr 2               _GAME01_DLI:
+000BFBr 2                     .export _GAME01_DLI
+000BFBr 2  48           	PHA
+000BFCr 2  68             PLA
+000BFDr 2  40             RTI
+000BFEr 2               
+000BFEr 2               _GAME02_DLI:
+000BFEr 2                     .export _GAME02_DLI
+000BFEr 2  48           	PHA
+000BFFr 2  68             PLA
+000C00r 2  40             RTI
+000C01r 2               
+000C01r 2               _GAME03_DLI:
+000C01r 2                     .export _GAME03_DLI
+000C01r 2  48           	PHA
+000C02r 2  68             PLA
+000C03r 2  40             RTI
+000C04r 2               
+000C04r 2               _GAME04_DLI:
+000C04r 2                     .export _GAME04_DLI
+000C04r 2  48           	PHA
+000C05r 2  68             PLA
+000C06r 2  40             RTI
+000C07r 2               
+000C07r 1                     .include "atari_sound_commander.asm"
+000C07r 2               
+000C07r 2               SND_ADDR_LO        = _SOUND_COMMANDER_VARIABLE_AREA + $0000
+000C07r 2               SND_ADDR_HI        = _SOUND_COMMANDER_VARIABLE_AREA + $0001
+000C07r 2               SND_DELAY_TIME     = _SOUND_COMMANDER_VARIABLE_AREA + $0008
+000C07r 2               SND_DELAY_RATE     = _SOUND_COMMANDER_VARIABLE_AREA + $0009
+000C07r 2               
+000C07r 2               SND_LENGTH_LO      = _SOUND_COMMANDER_VARIABLE_AREA + $0010
+000C07r 2               SND_LENGTH_HI      = _SOUND_COMMANDER_VARIABLE_AREA + $0011
+000C07r 2               SND_CHANNEL_IN_USE = _SOUND_COMMANDER_VARIABLE_AREA + $0018
+000C07r 2               MUS_DIST_START     = _SOUND_COMMANDER_VARIABLE_AREA + $0019
+000C07r 2               MUS_VOLUME         = _SOUND_COMMANDER_VARIABLE_AREA + $0020
+000C07r 2               MUS_MIN_VOL        = _SOUND_COMMANDER_VARIABLE_AREA + $0021
+000C07r 2               MUS_DISTORTION     = _SOUND_COMMANDER_VARIABLE_AREA + $0028
+000C07r 2               NX_SND_CHNL        = _SOUND_COMMANDER_VARIABLE_AREA + $0029
+000C07r 2               MUSIC_NOTE         = _SOUND_COMMANDER_VARIABLE_AREA + $002B
+000C07r 2               
+000C07r 2               
+000C07r 2               
+000C07r 2               
+000C07r 2               
+000C07r 2               
+000C07r 2               NC3  = 0
+000C07r 2               NCS3 = 1
+000C07r 2               ND3 = 2
+000C07r 2               NDS3 = 3
+000C07r 2               NE3 = 4
+000C07r 2               NF3 =5
+000C07r 2               NFS3 =6
+000C07r 2               NG3 =7
+000C07r 2               NGS3 = 8
+000C07r 2               NA3 = 9
+000C07r 2               NAS3 = 10
+000C07r 2               NB3 = 11
+000C07r 2               
+000C07r 2               NC4 = 12
+000C07r 2               NCS4 = 13
+000C07r 2               ND4 = 14
+000C07r 2               NDS4 = 15
+000C07r 2               NE4 = 16
+000C07r 2               NF4 =17
+000C07r 2               NFS4 =18
+000C07r 2               NG4 =19
+000C07r 2               NGS4 = 20
+000C07r 2               NA4 = 21
+000C07r 2               NAS4 = 22
+000C07r 2               NB4 = 23
+000C07r 2               
+000C07r 2               NC5 =  24
+000C07r 2               NCS5 = 25
+000C07r 2               ND5 = 26
+000C07r 2               NDS5 = 27
+000C07r 2               NE5 = 28
+000C07r 2               NF5 = 29
+000C07r 2               NFS5 = 30
+000C07r 2               NG5 = 31
+000C07r 2               NGS5 = 32
+000C07r 2               NA5 = 33
+000C07r 2               NAS5 = 34
+000C07r 2               NB5 = 35
+000C07r 2               
+000C07r 2               NC6 = 36
+000C07r 2               NCS6 = 36
+000C07r 2               ND6 = 38
+000C07r 2               NDS6 = 39
+000C07r 2               NE6 = 40
+000C07r 2               NF6 =41
+000C07r 2               NFS6 =42
+000C07r 2               NG6 =43
+000C07r 2               NGS6 = 44
+000C07r 2               NA6 = 45
+000C07r 2               NAS6 = 46
+000C07r 2               NB6 = 47
+000C07r 2               
+000C07r 2               NC7 = 48
+000C07r 2               NCS7 = 49
+000C07r 2               ND7 = 50
+000C07r 2               NDS7 = 51
+000C07r 2               NE7 = 52
+000C07r 2               NF7 =53
+000C07r 2               NFS7 =54
+000C07r 2               NG7 =55
+000C07r 2               NGS7 = 56
+000C07r 2               NA7 = 57
+000C07r 2               NAS7 = 58
+000C07r 2               NB7 = 59
+000C07r 2               
+000C07r 2               NC8 = 60
+000C07r 2               NCs8 = 61
+000C07r 2               ND8 = 62
+000C07r 2               NDs8 = 63
+000C07r 2               
+000C07r 2               
+000C07r 2               
+000C07r 2               
+000C07r 2               
+000C07r 2               
+000C07r 2               _PROCESS_SOUNDS:
+000C07r 2                   .export _PROCESS_SOUNDS
+000C07r 2  A2 06            LDX #$06
+000C09r 2  A9 00            LDA #$00
+000C0Br 2  85 CA            STA _NDX0
+000C0Dr 2               PLAY_SOUND_LOOP:
+000C0Dr 2  BD 78 06         LDA SND_CHANNEL_IN_USE,X
+000C10r 2  F0 65            BEQ DEC_CHANNEL_INDEX
+000C12r 2  10 17            BPL NO_MUSIC_DECAY
+000C14r 2  BD 68 06         LDA SND_DELAY_TIME,X
+000C17r 2  4A               LSR
+000C18r 2  90 11            BCC NO_MUSIC_DECAY
+000C1Ar 2  AD 80 06         LDA MUS_VOLUME
+000C1Dr 2  CD 81 06         CMP MUS_MIN_VOL
+000C20r 2  F0 09            BEQ NO_MUSIC_DECAY
+000C22r 2  CE 80 06         DEC MUS_VOLUME
+000C25r 2  AD 80 06         LDA MUS_VOLUME
+000C28r 2  9D 01 D2         STA AUDC1,X
+000C2Br 2               NO_MUSIC_DECAY:
+000C2Br 2  DE 68 06         DEC SND_DELAY_TIME,X
+000C2Er 2  D0 47            BNE DEC_CHANNEL_INDEX
+000C30r 2  BD 78 06         LDA SND_CHANNEL_IN_USE,X
+000C33r 2  10 06            BPL NO_MUSIC_NOTE
+000C35r 2  20 rr rr         JSR _GET_NEXT_MUSIC_NOTE
+000C38r 2  4C rr rr         JMP DEC_SOUND_LENGTH
+000C3Br 2               NO_MUSIC_NOTE:
+000C3Br 2  BD 69 06         LDA SND_DELAY_RATE,X
+000C3Er 2  9D 68 06         STA SND_DELAY_TIME,X
+000C41r 2               GET_SOUND_PART_ADDRESS:
+000C41r 2  BC 60 06         LDY SND_ADDR_LO,X
+000C44r 2  BD 61 06         LDA SND_ADDR_HI,X
+000C47r 2  85 CB            STA _NDX1
+000C49r 2  BD 78 06         LDA SND_CHANNEL_IN_USE,X
+000C4Cr 2  B1 CA            LDA (_NDX0),Y
+000C4Er 2  9D 01 D2         STA AUDC1,X
+000C51r 2  C8               INY
+000C52r 2  D0 05            BNE NO_SND_INC_ADDR_HI1
+000C54r 2  FE 61 06         INC SND_ADDR_HI,X
+000C57r 2  E6 CB            INC _NDX1
+000C59r 2               NO_SND_INC_ADDR_HI1:
+000C59r 2  B1 CA            LDA (_NDX0),Y
+000C5Br 2  9D 00 D2         STA AUDF1,X
+000C5Er 2  C8               INY
+000C5Fr 2  D0 03            BNE NO_SND_INC_ADDR_HI2
+000C61r 2  FE 61 06         INC SND_ADDR_HI,X
+000C64r 2               NO_SND_INC_ADDR_HI2:
+000C64r 2  98               TYA
+000C65r 2  9D 60 06         STA SND_ADDR_LO,X
+000C68r 2               DEC_SOUND_LENGTH:
+000C68r 2  DE 70 06         DEC SND_LENGTH_LO,X
+000C6Br 2  D0 0A            BNE DEC_CHANNEL_INDEX
+000C6Dr 2               END_SOUND:
+000C6Dr 2  A9 00            LDA #0
+000C6Fr 2  9D 78 06         STA SND_CHANNEL_IN_USE,X
+000C72r 2  9D 01 D2         STA AUDC1,X
+000C75r 2  F0 00            BEQ DEC_CHANNEL_INDEX
+000C77r 2               
+000C77r 2               DEC_CHANNEL_INDEX:
+000C77r 2  CA               DEX
+000C78r 2  CA               DEX
+000C79r 2  10 92            BPL PLAY_SOUND_LOOP
+000C7Br 2  60               RTS
+000C7Cr 2               
+000C7Cr 2               END_SOUND_CHECK:
+000C7Cr 2  A9 00            LDA #0
+000C7Er 2  9D 78 06         STA SND_CHANNEL_IN_USE,X
+000C81r 2  9D 01 D2         STA AUDC1,X
+000C84r 2  4C rr rr         JMP DEC_CHANNEL_INDEX
+000C87r 2               
+000C87r 2               
+000C87r 2               
+000C87r 2               _START_SOUND:
+000C87r 2                     .export _START_SOUND
+000C87r 2  48                   PHA
+000C88r 2               SouND_Channel_Again:
+000C88r 2  AC 89 06             LDY NX_SND_CHNL
+000C8Br 2  B9 78 06             LDA SND_CHANNEL_IN_USE,Y
+000C8Er 2  10 06                BPL No_Playing_Music_In_Channel
+000C90r 2  20 rr rr             JSR ADVANCE_SOUND_CHANNEL
+000C93r 2  4C rr rr             JMP SouND_Channel_Again
+000C96r 2               No_Playing_Music_In_Channel:
+000C96r 2               
+000C96r 2  68                   PLA
+000C97r 2  99 69 06             STA SND_DELAY_RATE,Y
+000C9Ar 2  BD rr rr             LDA START_SOUND_ADDR_LO,X
+000C9Dr 2  99 60 06             STA SND_ADDR_LO,Y
+000CA0r 2  BD rr rr             LDA START_SOUND_ADDR_HI,X
+000CA3r 2  99 61 06             STA SND_ADDR_HI,Y
+000CA6r 2  BD rr rr             LDA START_SOUND_LENGTH_LO,X
+000CA9r 2  F0 3F                BEQ PLAY_SOUND_ERROR
+000CABr 2  99 70 06             STA SND_LENGTH_LO,Y
+000CAEr 2  BD rr rr             LDA START_SOUND_LENGTH_HI,X
+000CB1r 2  99 71 06             STA SND_LENGTH_HI,Y
+000CB4r 2  10 18                BPL NO_SET_SOUND_MUSIC
+000CB6r 2  29 0F                AND #$0F
+000CB8r 2  99 71 06             STA SND_LENGTH_HI,Y
+000CBBr 2  A9 C0                LDA #192
+000CBDr 2  8D 8B 06             STA MUSIC_NOTE
+000CC0r 2  A9 00                LDA #$00
+000CC2r 2  8D 80 06             STA MUS_VOLUME
+000CC5r 2  8D 81 06             STA MUS_MIN_VOL
+000CC8r 2  8D 88 06             STA MUS_DISTORTION
+000CCBr 2  A9 81                LDA #$81
+000CCDr 2  2C                   .byte $2C
+000CCEr 2               NO_SET_SOUND_MUSIC:
+000CCEr 2  A9 01                LDA #$01
+000CD0r 2  99 78 06             STA SND_CHANNEL_IN_USE,Y
+000CD3r 2  29 01                AND #$01
+000CD5r 2  99 68 06             STA SND_DELAY_TIME,Y
+000CD8r 2               ADVANCE_SOUND_CHANNEL:
+000CD8r 2  AD 89 06             LDA NX_SND_CHNL
+000CDBr 2  18                   CLC
+000CDCr 2  69 02                ADC #2
+000CDEr 2  C9 08                CMP #8
+000CE0r 2  90 05                BCC NO_SND_CHNL_RESET
+000CE2r 2  A9 00                LDA #0
+000CE4r 2  8D 08 D2             STA AUDCTL
+000CE7r 2               NO_SND_CHNL_RESET:
+000CE7r 2  8D 89 06             STA NX_SND_CHNL
+000CEAr 2               PLAY_SOUND_ERROR:
+000CEAr 2  60                   RTS
+000CEBr 2               
+000CEBr 2               
+000CEBr 2               _GET_NEXT_MUSIC_NOTE:
+000CEBr 2                       .export _GET_NEXT_MUSIC_NOTE
+000CEBr 2  A9 00              LDA #0
+000CEDr 2  9D 01 D2           STA AUDC1,X
+000CF0r 2  BC 60 06           LDY SND_ADDR_LO,X
+000CF3r 2  BD 61 06           LDA SND_ADDR_HI,X
+000CF6r 2  85 CB              STA _NDX1
+000CF8r 2  B1 CA              LDA (_NDX0),Y ;DISTORTION + VOLUME
+000CFAr 2  8D 80 06           STA MUS_VOLUME
+000CFDr 2  29 F0              AND #$F0
+000CFFr 2  8D 81 06           STA MUS_MIN_VOL
+000D02r 2  C8                 INY
+000D03r 2  D0 05              BNE NO_MUS_INC_ADDR_HI1
+000D05r 2  FE 61 06           INC SND_ADDR_HI,X
+000D08r 2  E6 CB              INC _NDX1
+000D0Ar 2               NO_MUS_INC_ADDR_HI1:
+000D0Ar 2  B1 CA              LDA (_NDX0),Y
+000D0Cr 2  29 C0              AND #$C0
+000D0Er 2  F0 0C              BEQ SET_2_DELAY
+000D10r 2  C9 40              CMP #$40
+000D12r 2  F0 0B              BEQ SET_3_DELAY
+000D14r 2  C9 80              CMP #$80
+000D16r 2  F0 0A              BEQ SET_4_DELAY
+000D18r 2  C9 C0              CMP #$C0
+000D1Ar 2  F0 09              BEQ SET_5_DELAY
+000D1Cr 2               SET_2_DELAY:
+000D1Cr 2  A9 05              LDA #$05
+000D1Er 2  2C                 .BYTE $2C
+000D1Fr 2               SET_3_DELAY:
+000D1Fr 2  A9 07              LDA #$07
+000D21r 2  2C                 .BYTE $2C
+000D22r 2               SET_4_DELAY:
+000D22r 2  A9 09              LDA #$09
+000D24r 2  2C                 .BYTE $2C
+000D25r 2               SET_5_DELAY:
+000D25r 2  A9 11              LDA #$11
+000D27r 2  9D 68 06           STA SND_DELAY_TIME,X
+000D2Ar 2  B1 CA              LDA (_NDX0),Y
+000D2Cr 2  29 3F              AND #$3F
+000D2Er 2  85 C9              STA _M9
+000D30r 2  C8                 INY
+000D31r 2  D0 05              BNE NO_MUS_INC_ADDR_HI2
+000D33r 2  FE 61 06           INC SND_ADDR_HI,X
+000D36r 2  E6 CB              INC _NDX1
+000D38r 2               NO_MUS_INC_ADDR_HI2:
+000D38r 2  98                 TYA
+000D39r 2  9D 60 06           STA SND_ADDR_LO,X
+000D3Cr 2               CHECK_MUSIC_BASS1:
+000D3Cr 2  A4 C9              LDY _M9
+000D3Er 2  AD 81 06           LDA MUS_MIN_VOL
+000D41r 2  C9 C0              CMP #$C0
+000D43r 2  D0 09              BNE CHECK_MUSIC_BASS2
+000D45r 2  B9 rr rr           LDA MUSIC_NOTE_BASS1_TABLE,Y
+000D48r 2  9D 00 D2           STA AUDF1,X
+000D4Br 2  4C rr rr           JMP CHECK_ALT_START_DISTORTION
+000D4Er 2               CHECK_MUSIC_BASS2:
+000D4Er 2  C9 E0              CMP #$E0
+000D50r 2  D0 18              BNE DO_MUSIC_MAIN
+000D52r 2  B9 rr rr           LDA MUSIC_NOTE_BASS2_TABLE,Y
+000D55r 2  9D 00 D2           STA AUDF1,X
+000D58r 2  AD 80 06           LDA MUS_VOLUME
+000D5Br 2  29 0F              AND #$0F
+000D5Dr 2  09 C0              ORA #$C0
+000D5Fr 2  8D 80 06           STA MUS_VOLUME
+000D62r 2  29 F0              AND #$F0
+000D64r 2  8D 81 06           STA MUS_MIN_VOL
+000D67r 2  4C rr rr           JMP CHECK_ALT_START_DISTORTION
+000D6Ar 2               DO_MUSIC_MAIN:
+000D6Ar 2  B9 rr rr           LDA MUSIC_NOTE_MAIN_TABLE,Y
+000D6Dr 2  9D 00 D2           STA AUDF1,X
+000D70r 2               CHECK_ALT_START_DISTORTION:
+000D70r 2  AD 79 06           LDA MUS_DIST_START
+000D73r 2  F0 09              BEQ NO_ALT_START_DISTORTION
+000D75r 2  AD 80 06           LDA MUS_VOLUME
+000D78r 2  29 0F              AND #$0F
+000D7Ar 2  0D 79 06           ORA MUS_DIST_START
+000D7Dr 2  2C                 .BYTE $2C
+000D7Er 2               NO_ALT_START_DISTORTION:
+000D7Er 2  AD 80 06           LDA MUS_VOLUME
+000D81r 2  9D 01 D2           STA AUDC1,X
+000D84r 2               
+000D84r 2               
+000D84r 2  60                   RTS
+000D85r 2               
+000D85r 2               
+000D85r 2               _Kill_Playing_Music:
+000D85r 2                 .export _Kill_Playing_Music
+000D85r 2  A0 06          LDY #6
+000D87r 2               Kill_Music_Loop:
+000D87r 2  B9 78 06       LDA SND_CHANNEL_IN_USE,Y
+000D8Ar 2  10 0B          BPL No_Kill_Music_Channel
+000D8Cr 2  A9 00          LDA #0
+000D8Er 2  99 78 06       STA SND_CHANNEL_IN_USE,Y
+000D91r 2  99 01 D2       STA AUDC1,Y
+000D94r 2  99 00 D2       STA AUDF1,Y
+000D97r 2               No_Kill_Music_Channel:
+000D97r 2  88             DEY
+000D98r 2  88             DEY
+000D99r 2  10 EC          BPL Kill_Music_Loop
+000D9Br 2               No_END_Prior_Music:
+000D9Br 2  60             RTS
+000D9Cr 2               
+000D9Cr 2               
+000D9Cr 2               
+000D9Cr 2               STOP_SOUND:
+000D9Cr 2               ;   TYA
+000D9Cr 2               ;   ASL @
+000D9Cr 2               ;   TAY
+000D9Cr 2               ;   LDA #0
+000D9Cr 2               ;   STA SND_CHANNEL_IN_USE,Y
+000D9Cr 2               ;   STA SND_LENGTH_LO,Y
+000D9Cr 2               ;   STA SND_LENGTH_HI,Y
+000D9Cr 2               ;   STA AUDC1,Y
+000D9Cr 2               ;   STA AUDF1,Y
+000D9Cr 2               ;   RTS
+000D9Cr 2               
+000D9Cr 2               _SILENCE:
+000D9Cr 2                   .export _SILENCE
+000D9Cr 2  A9 00            LDA #0
+000D9Er 2  8D 08 D2         STA AUDCTL
+000DA1r 2  A0 06            LDY #6
+000DA3r 2               NEXT_SILENCE:
+000DA3r 2               
+000DA3r 2               ;    STA SND_LENGTH_HI,Y
+000DA3r 2  B9 78 06         LDA SND_CHANNEL_IN_USE,Y
+000DA6r 2  30 0E            BMI No_Disable_Music_Channel
+000DA8r 2  A9 00            LDA #0
+000DAAr 2  99 78 06         STA SND_CHANNEL_IN_USE,Y
+000DADr 2  99 60 06         STA SND_ADDR_LO,Y
+000DB0r 2  99 70 06         STA SND_LENGTH_LO,Y
+000DB3r 2  99 68 06         STA SND_DELAY_TIME,Y
+000DB6r 2               ;    STA SND_ADDR_HI,Y
+000DB6r 2               No_Disable_Music_Channel:
+000DB6r 2  A9 00            LDA #0
+000DB8r 2  99 01 D2         STA AUDC1,Y
+000DBBr 2  99 00 D2         STA AUDF1,Y
+000DBEr 2  88               DEY
+000DBFr 2  88               DEY
+000DC0r 2  10 E1            BPL NEXT_SILENCE
+000DC2r 2  60               RTS
+000DC3r 2               
+000DC3r 2               EXPLOSION_SOUND_DATA:
+000DC3r 2  8F F8 8F F0    .byte $8F,248,$8F,240,$8E,232,$8E,224,$0D,216,$8D,208,$8C,200,$6C,192
+000DC7r 2  8E E8 8E E0  
+000DCBr 2  0D D8 8D D0  
+000DD3r 2  8B FC 6B F4    .byte $8B,252,$6B,244,$0A,236,$8A,228,$89,220,$89,212,$88,204,$88,196
+000DD7r 2  0A EC 8A E4  
+000DDBr 2  89 DC 89 D4  
+000DE3r 2  07 F8 87 F0    .byte $07,248,$87,240,$86,232,$66,224,$85,216,$85,208,$84,200,$84,192
+000DE7r 2  86 E8 66 E0  
+000DEBr 2  85 D8 85 D0  
+000DF3r 2  83 FC 83 F4    .byte $83,252,$83,244,$83,236,$82,228,$82,220,$62,212,$01,204,$81,196
+000DF7r 2  83 EC 82 E4  
+000DFBr 2  82 DC 62 D4  
+000E03r 2               EXPLOSION_SOUND_SIZE = (*- EXPLOSION_SOUND_DATA) / 2
+000E03r 2               
+000E03r 2               BELL_01_SOUND_DATA:                                                           ; 14
+000E03r 2  CF EC AE 78    .byte $CF,236,$AE,120,$CD,236,$AC,112
+000E07r 2  CD EC AC 70  
+000E0Br 2  CB 89 AA 78    .byte $CB,137,$AA,120,$C8,242,$A6,112
+000E0Fr 2  C8 F2 A6 70  
+000E13r 2  C4 88 A3 78    .byte $C4,136,$A3,120,$C2,251,$A1,112
+000E17r 2  C2 FB A1 70  
+000E1Br 2               BELL_01_SOUND_SIZE = (*- BELL_01_SOUND_DATA)/2
+000E1Br 2               
+000E1Br 2               BELL_02_SOUND_DATA:
+000E1Br 2  AF 40 AE 40    .byte $AF,064,$AE,064,$AD,065,$AC,064                                       ; 12
+000E1Fr 2  AD 41 AC 40  
+000E23r 2  AB 40 AA 3F    .byte $AB,064,$AA,063,$A8,064,$A6,064
+000E27r 2  A8 40 A6 40  
+000E2Br 2  A4 41 A3 40    .byte $A4,065,$A3,064,$A2,064,$A1,063
+000E2Fr 2  A2 40 A1 3F  
+000E33r 2               BELL_02_SOUND_SIZE = (*- BELL_02_SOUND_DATA) / 2
+000E33r 2               
+000E33r 2               GET_ITEM_SOUND_DATA:
+000E33r 2  AF 80 AF 80    .byte $AF,128,$AF,128,$AE,128,$AE,128                                       ; 12
+000E37r 2  AE 80 AE 80  
+000E3Br 2  CD CE CC CE    .byte $CD,206,$CC,206,$CB,206,$CA,206
+000E3Fr 2  CB CE CA CE  
+000E43r 2  6F 30 AF 30    .byte $6F,048,$AF,048,$AE,048,$AE,048                                       ; 12
+000E47r 2  AE 30 AE 30  
+000E4Br 2  CD 50 CC 50    .byte $CD,080,$CC,080,$CB,080,$CA,080
+000E4Fr 2  CB 50 CA 50  
+000E53r 2               GET_ITEM_SOUND_SIZE = (*- GET_ITEM_SOUND_DATA) / 2
+000E53r 2               
+000E53r 2               ALERT_SOUND_DATA:
+000E53r 2  2A 1A 29 17      .byte $2A,26,$29,023,$28,020,$27,017,$26,014,$25,11,$20,00,$20,00,$20,00,$20,00,$20,00
+000E57r 2  28 14 27 11  
+000E5Br 2  26 0E 25 0B  
+000E69r 2  2A 1A 29 17      .byte $2A,26,$29,023,$28,020,$27,017,$26,014,$25,11,$20,00,$20,00,$20,00,$20,00,$20,00
+000E6Dr 2  28 14 27 11  
+000E71r 2  26 0E 25 0B  
+000E7Fr 2               ALERT_SIZE = (*- ALERT_SOUND_DATA) / 2 + 1
+000E7Fr 2               
+000E7Fr 2               GAME_OVER_SOUND_DATA:
+000E7Fr 2  CC 7B 04 7A      .byte $CC,$7B,004,$7A,003,$79,002,$78,001,$77,000
+000E83r 2  03 79 02 78  
+000E87r 2  01 77 00     
+000E8Ar 2               GAME_OVER_SIZE = (*- GAME_OVER_SOUND_DATA) / 2 + 1
+000E8Ar 2               
+000E8Ar 2               EXTRA_LIFE_SOUND_DATA:
+000E8Ar 2  AF 40 AF 41    .byte $AF,064,$AF,065,$2F,064,$AE,065,$AE,066,$8E,067, $AC,016,$2C,015,$AC,016,$2C,017,$AB,018,$8B,019
+000E8Er 2  2F 40 AE 41  
+000E92r 2  AE 42 8E 43  
+000EA2r 2  A9 20 A9 21    .byte $A9,032,$A9,033,$29,032,$A8,033,$A8,034,$87,034, $A6,008,$26,009,$A6,008,$26,009,$A6,010,$87,011
+000EA6r 2  29 20 A8 21  
+000EAAr 2  A8 22 87 22  
+000EBAr 2  A4 10 A4 11    .byte $A4,016,$A4,017,$24,016,$A4,018,$A4,018,$84,019, $A2,004,$22,005,$A2,004,$22,005,$A2,006,$82,007
+000EBEr 2  24 10 A4 12  
+000EC2r 2  A4 12 84 13  
+000ED2r 2               EXTRA_LIFE_SOUND_SIZE = (*-EXTRA_LIFE_SOUND_DATA) /2 + 1
+000ED2r 2               
+000ED2r 2               _SF_EXPLOSION =   0
+000ED2r 2               _SF_BELL_01 =     1
+000ED2r 2               _SF_BELL_02 =     2
+000ED2r 2               _SF_EXTRA_LIFE =  3
+000ED2r 2               _SF_GET_ITEM =    4
+000ED2r 2               _SF_ALERT =       5
+000ED2r 2               _SF_GAME_OVER =   6
+000ED2r 2               
+000ED2r 2                   .export _SF_EXPLOSION
+000ED2r 2                   .export _SF_BELL_01
+000ED2r 2                   .export _SF_BELL_02
+000ED2r 2                   .export _SF_EXTRA_LIFE
+000ED2r 2                   .export _SF_GET_ITEM
+000ED2r 2                   .export _SF_ALERT
+000ED2r 2                   .export _SF_GAME_OVER
+000ED2r 2               
+000ED2r 2               START_SOUND_ADDR_LO:
+000ED2r 2  rr               .byte <EXPLOSION_SOUND_DATA
+000ED3r 2  rr rr            .byte <BELL_01_SOUND_DATA, <BELL_02_SOUND_DATA
+000ED5r 2  rr rr            .byte <EXTRA_LIFE_SOUND_DATA, <GET_ITEM_SOUND_DATA
+000ED7r 2  rr rr            .byte <ALERT_SOUND_DATA, <GAME_OVER_SOUND_DATA
+000ED9r 2               
+000ED9r 2               START_SOUND_ADDR_HI:
+000ED9r 2  rr               .byte >EXPLOSION_SOUND_DATA
+000EDAr 2  rr rr            .byte >BELL_01_SOUND_DATA, >BELL_02_SOUND_DATA
+000EDCr 2  rr rr            .byte >EXTRA_LIFE_SOUND_DATA, >GET_ITEM_SOUND_DATA
+000EDEr 2  rr rr            .byte >ALERT_SOUND_DATA, >GAME_OVER_SOUND_DATA
+000EE0r 2               
+000EE0r 2               START_SOUND_LENGTH_LO:
+000EE0r 2  20               .byte <EXPLOSION_SOUND_SIZE
+000EE1r 2  0C 0C            .byte <BELL_01_SOUND_SIZE, <BELL_02_SOUND_SIZE
+000EE3r 2  25 10            .byte <EXTRA_LIFE_SOUND_SIZE, <GET_ITEM_SOUND_SIZE
+000EE5r 2  17 06            .byte <ALERT_SIZE, <GAME_OVER_SIZE
+000EE7r 2               
+000EE7r 2               START_SOUND_LENGTH_HI:
+000EE7r 2  00 00 00         .byte >ALERT_SIZE, >GAME_OVER_SIZE, >EXPLOSION_SOUND_SIZE
+000EEAr 2  00 00            .byte >BELL_01_SOUND_SIZE, >BELL_02_SOUND_SIZE
+000EECr 2  00 00            .byte >EXTRA_LIFE_SOUND_SIZE, >GET_ITEM_SOUND_SIZE
+000EEEr 2  00 00            .byte >ALERT_SIZE, >GAME_OVER_SIZE
+000EF0r 2               
+000EF0r 2               
+000EF0r 2               
+000EF0r 2               MUSIC_NOTE_MAIN_TABLE:  ;Pure Tone  from RMT
+000EF0r 2               ;      C  C#   D   D#  E   F   F#  G  G#  A    A#  B
+000EF0r 2  F3 E6 D9 CC  	.byte $F3,$E6,$D9,$CC,$C1,$B5,$AD,$A2,$99,$90,$88,$80 ;O1  00
+000EF4r 2  C1 B5 AD A2  
+000EF8r 2  99 90 88 80  
+000EFCr 2  79 72 6C 66    .byte $79,$72,$6C,$66,$60,$5B,$55,$51,$4C,$48,$44,$40 ;O2  12
+000F00r 2  60 5B 55 51  
+000F04r 2  4C 48 44 40  
+000F08r 2  3C 39 35 32    .byte $3C,$39,$35,$32,$2F,$2D,$2A,$28,$25,$23,$21,$1F ;O3  24
+000F0Cr 2  2F 2D 2A 28  
+000F10r 2  25 23 21 1F  
+000F14r 2  1D 1C 1A 18    .byte $1D,$1C,$1A,$18,$17,$16,$14,$13,$12,$11,$10,$0F ;O4  36
+000F18r 2  17 16 14 13  
+000F1Cr 2  12 11 10 0F  
+000F20r 2  0E 0D 0C 0B  	.byte $0E,$0D,$0C,$0B,$0A,$09,$08,$07,$06,$05,$04,$03 ;O5  48
+000F24r 2  0A 09 08 07  
+000F28r 2  06 05 04 03  
+000F2Cr 2  02 01 00 00    .byte $02,$01,$00,$00                                 ;O6  60
+000F30r 2               ;      C  C#   D   D#  E   F   F#  G  G#  A    A#  B
+000F30r 2               MUSIC_NOTE_BASS1_TABLE:
+000F30r 2  BF B6 AA A1  	.byte $BF,$B6,$AA,$A1,$98,$8F,$89,$80,$F2,$E6,$DA,$CE ;O1  00
+000F34r 2  98 8F 89 80  
+000F38r 2  F2 E6 DA CE  
+000F3Cr 2  BF B6 AA A1  	.byte $BF,$B6,$AA,$A1,$98,$8F,$89,$80,$7A,$71,$6B,$65 ;O2  12
+000F40r 2  98 8F 89 80  
+000F44r 2  7A 71 6B 65  
+000F48r 2  5F 5C 56 50  	.byte $5F,$5C,$56,$50,$4D,$47,$44,$3E,$3C,$38,$35,$32 ;O3  24
+000F4Cr 2  4D 47 44 3E  
+000F50r 2  3C 38 35 32  
+000F54r 2  2F 2D 2A 28  	.byte $2F,$2D,$2A,$28,$25,$23,$21,$1F,$1D,$1C,$1A,$18 ;O4  36
+000F58r 2  25 23 21 1F  
+000F5Cr 2  1D 1C 1A 18  
+000F60r 2  17 16 14 13  	.byte $17,$16,$14,$13,$12,$11,$10,$0F,$0E,$0D,$0C,$0B ;O5  48
+000F64r 2  12 11 10 0F  
+000F68r 2  0E 0D 0C 0B  
+000F6Cr 2  0A 09 08 07  	.byte $0A,$09,$08,$07                                 ;O6  60
+000F70r 2               ;      C  C#   D   D#  E   F   F#  G  G#  A    A#  B
+000F70r 2               MUSIC_NOTE_BASS2_TABLE:
+000F70r 2  FF F1 E4 D8  	.byte $FF,$F1,$E4,$D8,$CA,$C0,$B5,$AB,$A2,$99,$8E,$87 ;O1  00
+000F74r 2  CA C0 B5 AB  
+000F78r 2  A2 99 8E 87  
+000F7Cr 2  7F 79 73 70  	.byte $7F,$79,$73,$70,$66,$61,$5A,$55,$52,$4B,$48,$43 ;O2  12
+000F80r 2  66 61 5A 55  
+000F84r 2  52 4B 48 43  
+000F88r 2  3F 3C 39 37  	.byte $3F,$3C,$39,$37,$33,$30,$2D,$2A,$28,$25,$24,$21 ;O3  24
+000F8Cr 2  33 30 2D 2A  
+000F90r 2  28 25 24 21  
+000F94r 2  1F 1E 1C 1B  	.byte $1F,$1E,$1C,$1B,$19,$17,$16,$15,$13,$12,$11,$10 ;O4  36
+000F98r 2  19 17 16 15  
+000F9Cr 2  13 12 11 10  
+000FA0r 2  0F 0E 0D 0C  	.byte $0F,$0E,$0D,$0C,$0B,$0A,$09,$08,$07,$06,$05,$04 ;O5  48
+000FA4r 2  0B 0A 09 08  
+000FA8r 2  07 06 05 04  
+000FACr 2  03 02 01 00  	.byte $03,$02,$01,$00                                 ;O6  60
+000FB0r 2               
+000FB0r 2               BIT_MUSIC_LOOP:
+000FB0r 2  40             .byte $40
+000FB1r 2               BIT_SOUND_IS_MUSIC:
+000FB1r 2  80             .byte $80
+000FB2r 2               
+000FB2r 2               
+000FB2r 1               
+000FB2r 1               
+000FB2r 1               
+000FB2r 1               
+000FB2r 1               ; ------------------------------------------------------------------------
+000FB2r 1               ; Actual code
+000FB2r 1               ; *** end of main startup code
+000FB2r 1               
+000FB2r 1                         .segment "DATA0"
+000FB2r 1               
+000FB2r 1               _RANDOM_PLACE_MINDS:
+000FB2r 1                   .export _RANDOM_PLACE_MINDS
+000FB2r 1  A9 C1        			LDA #193
+000FB4r 1  AC 0A D2           LDY RANDOM
+000FB7r 1  99 40 08           STA _GAME_SCREEN_ADDR+0,Y
+000FBAr 1  AC 0A D2           LDY RANDOM
+000FBDr 1  99 40 09           STA _GAME_SCREEN_ADDR+256,Y
+000FC0r 1  AC 0A D2           LDY RANDOM
+000FC3r 1  99 40 0A           STA _GAME_SCREEN_ADDR+512,Y
+000FC6r 1  AC 0A D2           LDY RANDOM
+000FC9r 1  99 40 0B           STA _GAME_SCREEN_ADDR+768,Y
+000FCCr 1  60                 RTS
+000FCDr 1               
+000FCDr 1               
+000FCDr 1               _SCAN_FOR_MINDS:
+000FCDr 1                           .export _SCAN_FOR_MINDS
+000FCDr 1               ;
+000FCDr 1               ; Scan For Minds
+000FCDr 1               ;
+000FCDr 1               
+000FCDr 1  AD 20 06                   LDA _character_px
+000FD0r 1  38                         SEC
+000FD1r 1  E9 37                      SBC #55
+000FD3r 1  C9 F8                      CMP #248
+000FD5r 1  90 02                      BCC SM_L0
+000FD7r 1  A9 00                      LDA #0
+000FD9r 1               SM_L0:
+000FD9r 1  C9 94                      CMP #148
+000FDBr 1  90 02                      BCC SM_L1
+000FDDr 1  A9 94                      LDA #148
+000FDFr 1               SM_L1:
+000FDFr 1  4A                         LSR
+000FE0r 1  4A                         LSR
+000FE1r 1  85 C2                      STA _M2
+000FE3r 1               
+000FE3r 1  AD 21 06                   LDA _character_py
+000FE6r 1  38                         SEC
+000FE7r 1  E9 20                      SBC #32
+000FE9r 1  B0 02                      BCS SM_L2
+000FEBr 1  A9 00                      LDA #0
+000FEDr 1               SM_L2:
+000FEDr 1  4A                         LSR
+000FEEr 1  4A                         LSR
+000FEFr 1  4A                         LSR
+000FF0r 1  85 C1                      STA _M1
+000FF2r 1               
+000FF2r 1  A9 00                      LDA #0
+000FF4r 1  85 C6                      STA _M6
+000FF6r 1  8D 38 06                   STA _minds_found
+000FF9r 1  A4 C1                      LDY _M1
+000FFBr 1  C0 1A                      CPY #26
+000FFDr 1  B0 4A                      BCS Scan_For_restore_Beyond_Screen
+000FFFr 1  88                         DEY
+001000r 1  88                         DEY
+001001r 1               
+001001r 1  84 C5                      STY _M5
+001003r 1  10 02                      BPL No_0_First_restore_Row
+001005r 1  A0 00                      LDY #0
+001007r 1               No_0_First_restore_Row:
+001007r 1  A5 C2                      LDA _M2
+001009r 1  18                         CLC
+00100Ar 1  79 rr rr                   ADC _SCRREN_ROW_LOW,Y
+00100Dr 1  85 CA                      STA _NDX0
+00100Fr 1  B9 rr rr                   LDA _SCRREN_ROW_HIGH,Y
+001012r 1  69 00                      ADC #0
+001014r 1  85 CB                      STA _NDX1
+001016r 1               Scan_restore_Row_Start:
+001016r 1  A5 C5                      LDA _M5
+001018r 1  F0 21                      BEQ Skip_restore_Scan_Row
+00101Ar 1  C9 1A                      CMP #26
+00101Cr 1  B0 1D                      BCS Skip_restore_Scan_Row
+00101Er 1  A0 05                      LDY #5
+001020r 1               Scan_For_restore_Loop:
+001020r 1  B1 CA                      LDA (_NDX0),Y
+001022r 1  C5 C3                      CMP _M3
+001024r 1  D0 07                      BNE No_restore_Found
+001026r 1  A5 C4                      LDA _M4
+001028r 1  91 CA                      STA (_NDX0),Y
+00102Ar 1  EE 38 06                   INC _minds_found
+00102Dr 1               No_restore_Found:
+00102Dr 1  88                         DEY
+00102Er 1  10 F0                      BPL Scan_For_restore_Loop
+001030r 1               
+001030r 1  A5 CA                      LDA _NDX0
+001032r 1  18                         CLC
+001033r 1  69 28                      ADC #40 ; or 48 if widescren
+001035r 1  85 CA                      STA _NDX0
+001037r 1  90 02                      BCC SM_L5
+001039r 1  E6 CB                      INC _NDX1
+00103Br 1               SM_L5:
+00103Br 1               
+00103Br 1               Skip_restore_Scan_Row:
+00103Br 1  A4 C6                      LDY _M6
+00103Dr 1  C8                         INY
+00103Er 1  C0 05                      CPY #5
+001040r 1  84 C6                      STY _M6
+001042r 1  B0 05                      BCS Scan_For_restore_Beyond_Screen
+001044r 1  E6 C5                      INC _M5
+001046r 1  4C rr rr                   JMP Scan_restore_Row_Start
+001049r 1               Scan_For_restore_Beyond_Screen:
+001049r 1  60                         RTS
+00104Ar 1               
+00104Ar 1               

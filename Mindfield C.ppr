@@ -1,0 +1,62 @@
+[Config]
+Compilator.SaveAll=0
+Compilator.Capture=0
+Compilator.CompileOnBackground=0
+Compilator.ProgSaveAll=0
+Compilator.ProgRunSelection=0
+Compilator.LogType=0
+DefaultCP=0
+LogtoEnd=1
+DontOpen=0
+AbsolutePath=0
+FileFormat=0
+ProjectFilesOnly=0
+HTServer=localhost
+[Project tree]
+mindfield
+	+Folder
+		MindField.c
+[Open project files]
+0=MindField.c
+1=mindfield_data.asm
+2=..\include\atari5200.h
+3=Mind_Field_Interupts.asm
+4=linker.cfg
+5=atari_sound_commander.asm
+6=Make_MindField_XEX.bat
+7=config_xex.cfg
+8=configcartridge.cfg
+9=mindfield_ml.asm
+[Selected Project Files]
+Main=
+Selected=mindfield_ml.asm
+[MindField.c]
+TopLine=1
+Caret=1,1
+[mindfield_data.asm]
+TopLine=1
+Caret=1,12
+[..\include\atari5200.h]
+TopLine=1
+Caret=75,17
+[Mind_Field_Interupts.asm]
+TopLine=1
+Caret=1,1
+[linker.cfg]
+TopLine=1
+Caret=1,1
+[atari_sound_commander.asm]
+TopLine=145
+Caret=13,172
+[Make_MindField_XEX.bat]
+TopLine=1
+Caret=19,16
+[config_xex.cfg]
+TopLine=29
+Caret=1,1
+[configcartridge.cfg]
+TopLine=1
+Caret=1,1
+[mindfield_ml.asm]
+TopLine=1
+Caret=1,1

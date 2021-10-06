@@ -1,0 +1,51 @@
+
+Basic
+    if minds_found > 0
+      for j = b - 2 to b + 3
+          if (j >=0) and (j < 25)                                              
+              row_addr =   screen_rows(j) + a;
+              for c = row_addr  - 2 to row_addr  + 3
+                 e = peek(c)
+                 if e = 65 
+                    poke c,193                                                          												
+                 endif
+              next c
+          endif
+       next j           					            										
+    endif
+
+Pascal
+	if (minds_found > 0) then begin;
+      for j := b - 2 to b + 3 do
+      begin
+          if (j >=0) and (j < 25) then begin                                            
+              row_addr :=   screen_rows [j] + a;
+              for c := row_addr  - 2 to row_addr  + 3 do
+                begin
+									e := peek(c);
+									if e = 65 then poke (c,193);                                                          												
+                end;
+          end;           					            										
+      end;
+  end;        
+
+C
+	if (minds_found > 0)
+  	{
+  	  for (j = b - 2; j <= b + 3; j = j + 1)
+  	  {
+  		  if ((j >= 0) && (j < 25))
+  		  {
+  			  row_addr = screen_rows(j) + a;
+  			  for (c = row_addr - 2; c <= row_addr + 3; c = c +1)
+  			  {
+  				  e = peek(c);
+  				  if (e == 65)
+  				  {
+  					poke (c,193);
+  				  }
+  			  }
+  		  }
+  	  }
+  	}
+        
